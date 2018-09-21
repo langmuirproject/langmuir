@@ -25,7 +25,7 @@ with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(name='langmuir',
-      version='0.1.0',
+      version='0.2.0',
       description='Functions for work on Langmuir probe theory',
       long_description=long_description,
       author='Sigvald Marholm',
