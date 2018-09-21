@@ -31,25 +31,29 @@ The tables for attracted-species current for finite-radius probes in an isotherm
     >>> R = 1
     >>> eV_kT = 25
 
-    >>> I = lafr_attr_current('Sphere')
-    >>> I(R, eV_kT)
+    >>> f = lafr_attr_current('Sphere')
+    >>> I = f(R, eV_kT)
+    >>> print("{:.3f}".format(I))
     21.895
 
-The function interpolates between values given in Laframboise's tables.
+The function linearly interpolates between values given in Laframboise's tables.
+The argument ``kind`` can be used to change to quadratic interpolation.
 To get the current in Ampére's you must find the normalizing current::
 
     >>> n=1e11
     >>> T=1e3
 
     >>> I0 = lafr_norm_current('Sphere', R, n, T)
-    >>> I0*I(R, eV_kT)
-    -0.21650719872149787
+    >>> I = I0*f(R, eV_kT)
+    >>> print("{:.1f}mA".format(I*1e3))
+    -216.5mA
 
 Likewise for cylindrical probes. The current is then in Ampère's per meter so
 you must multiply by the probe length::
 
     >>> l = 25e-3
-    >>> I = lafr_attr_current('Cylinder')
+    >>> f = lafr_attr_current('Cylinder')
     >>> I0 = lafr_norm_current('Cylinder', R, n, T)
-    >>> I0*l*I(R, eV_kT)
-    -0.0007110399980848462
+    >>> I = I0*l*f(R, eV_kT)
+    >>> print("{:.1f}uA".format(I*1e6))
+    -711.0uA
