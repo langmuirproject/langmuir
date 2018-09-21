@@ -1,5 +1,5 @@
 langmuir
-=========
+========
 
 .. image:: https://travis-ci.com/sigvaldm/langmuir.svg?branch=master
     :target: https://travis-ci.com/sigvaldm/langmuir
@@ -21,3 +21,13 @@ Install from PyPI using ``pip`` (preferred method)::
 Or download the GitHub repository https://github.com/sigvaldm/langmuir.git and run::
 
     python setup.py install
+
+Usage
+-----
+
+Example::
+
+    >>> from langmuir import *
+    >>> f = lafr_func('Sphere')
+    >>> f(1,25)
+    21.895
