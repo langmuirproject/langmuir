@@ -19,3 +19,11 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 
 from langmuir import *
 import pytest
+
+def test_lafr_attr_current_geometry():
+    with pytest.raises(ValueError) as e_info:
+        f = lafr_attr_current('Pentagon')
+
+def test_lafr_norm_current_geometry():
+    with pytest.raises(ValueError) as e_info:
+        f = lafr_norm_current('Pentagon', 1, 1e11, 1e3)

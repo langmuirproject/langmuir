@@ -32,7 +32,7 @@ setup(name='langmuir',
       author_email='marholm@marebakken.com',
       url='https://github.com/sigvaldm/langmuir.git',
       py_modules=['langmuir'],
-      install_requires=['scipy'],
+      install_requires=['numpy', 'scipy'],
       license='LGPL',
       classifiers=[
         'Programming Language :: Python :: 2.7',
