@@ -1,5 +1,7 @@
 """
-Copyright 2018 Sigvald Marholm <marholm@marebakken.com>
+Copyright 2018
+    Sigvald Marholm <marholm@marebakken.com>
+    Diako Darian <diakod@math.uio.no>
 
 This file is part of langmuir.
 
