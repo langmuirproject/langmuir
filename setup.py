@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """
-Copyright 2018 Sigvald Marholm <marholm@marebakken.com>
+Copyright 2018
+    Sigvald Marholm <marholm@marebakken.com>
+    Diako Darian <diakod@math.uio.no>
 
 This file is part of langmuir.
 
@@ -24,8 +26,11 @@ from io import open # Necessary for Python 2.7
 with open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
+with open('.version') as f:
+    version = f.read().strip()
+
 setup(name='langmuir',
-      version='0.2.0',
+      version=version,
       description='Functions for work on Langmuir probe theory',
       long_description=long_description,
       author='Sigvald Marholm',
