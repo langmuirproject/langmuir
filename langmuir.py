@@ -23,6 +23,183 @@ import numpy as np
 from scipy.interpolate import interp2d
 from scipy.constants import value as constants
 
+class Species(object):
+    """
+    Defines a species using a set of flags and keyword parameters. Maxwellian
+    electrons are the default but other distributions can be specified using a
+    flag, e.g. 'kappa'. Other parameters can be specified/overridden using the
+    keyword parameters. Examples::
+
+        >>> # Maxwellian electrons with density 1e11 m^(-3) and 1000 K
+        >>> species = Species(n=1e11, T=1000)
+
+        >>> # Kappa-distributed electrons with kappa=2
+        >>> species = Species('kappa', n=1e11, T=1000, kappa=2)
+
+        >>> # Doubly charged Maxwellain Oxygen ions # NOT IMPLEMENTED
+        >>> # species = Species(Z=2, amu=16, n=1e11, T=1000)
+
+        >>> # Cairns-distributed protons with alpha=0.2
+        >>> species = Species('cairns', 'proton', n=1e11, T=1000, alpha=0.2)
+
+    A plasma is fully specified by a list of species. E.g. for an
+    electron-proton plasma::
+
+        >>> plasma = []
+        >>> plasma.append(Species('electron', n=1e11, T=1000))
+        >>> plasma.append(Species('proton',   n=1e11, T=1000))
+
+    Flags:
+    ------
+    'maxwellian'   : Maxwellian distribution (default)
+    'kappa'        : Kappa distribution
+    'cairns'       : Cairns distribution
+    'kappa-cairns' : Kappa-Cairns distribution
+    'electron'     : Elecron species (default)
+    'proton'       : Proton species
+
+    Keyword parameters:
+    -------------------
+    m     : mass [kg]
+    amu   : mass [amu] # NOT IMPLEMENTED
+    q     : charge [C]
+    Z     : charge [elementary charges] # NOT IMPLEMENTED
+    n     : density [m^{-3}]
+    T     : temperature [K]
+    eV    : temperature [eV] # NOT IMPLEMENTED
+    kappa : kappa (for Kappa and Kappa-Cairns distributions)
+    alpha : alpha (for Cairns and Kappa-Cairns distributions)
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        dist = 'maxwellian'
+
+        for arg in args:
+            if arg.lower() in ['maxwellian',
+                               'kappa',
+                               'cairns',
+                               'kappa-cairns']:
+                dist = arg.lower()
+
+            if arg.lower()=='proton':
+                kwargs['q']=constants('elementary charge')
+                kwargs['m']=constants('proton mass')
+
+        self.dist = dist
+        self.q = kwargs.pop('q', -constants('elementary charge'))
+        self.m = kwargs.pop('m', constants('electron mass'))
+        self.n = kwargs.pop('n')
+
+        if dist == 'maxwellian':
+            self.T     = kwargs.pop('T')
+            self.alpha = 0
+            self.kappa = float('inf')
+
+        if dist == 'kappa':
+            self.T     = kwargs.pop('T')
+            self.alpha = 0
+            self.kappa = kwargs.pop('kappa')
+
+        if dist == 'cairns':
+            self.T     = kwargs.pop('T')
+            self.alpha = kwargs.pop('alpha')
+            self.kappa = float('inf')
+
+        if dist == 'kappa-cairns':
+            self.T     = kwargs.pop('T')
+            self.alpha = kwargs.pop('alpha')
+            self.kappa = kwargs.pop('kappa')
+
+class Geometry(object):
+    """
+    Specifies a probe geometry. Examples::
+
+        >>> # Plane probe with 0.01 m^2 area
+        >>> geometry = Geometry('plane', A=0.01)
+
+        >>> # Cylindrical probe with 1e-3 m radius and 25e-3 m length
+        >>> geometry = Geometry('cylinder', r=1e-3, l=25e-3)
+
+        >>> # Spherical probe with 1e-2 m radius
+        >>> geometry = Geometry('sphere', r=0.01)
+
+    Flags:
+    ------
+    'plane'    : Plane probe
+    'cylinder' : Cylindrical probe (default)
+    'sphere'   : Spherical probe
+
+    Keyword parameters:
+    -------------------
+    r : radius [m]
+    l : length [m]
+    A : area [m^2]
+    """
+    def __init__(self, shape='cylinder', **kwargs):
+        self.shape = shape.lower()
+        assert self.shape in ['plane', 'sphere', 'cylinder']
+
+        if shape == 'plane':
+            self.A = kwargs.pop('A')
+
+        if shape == 'sphere':
+            self.r = kwargs.pop('r')
+
+        if shape == 'cylinder':
+            self.r = kwargs.pop('r')
+            self.l = kwargs.pop('l')
+
+def OML_current(geometry, species, V):
+
+    """
+    if sphere:
+        if attracted (q*V<0):
+            if kappa = inf:
+                Cairns
+            else:
+                Kappa-Cairns
+        else: # repelled
+            if kappa = inf:
+                Cairns
+            else:
+                Kappa-Cairns
+    elif cylinder:
+        if attracted (q*V<0):
+            if kappa = inf:
+                Cairns
+            else:
+                Kappa-Cairns
+        else: # repelled
+            if kappa = inf:
+                Cairns
+            else:
+                Kappa-Cairns
+    elif plane:
+        ?
+    else:
+        error
+    """
+
+def current(geometry, species, V):
+
+    if isinstance(species, list):
+        I = 0
+        for s in species:
+            I += current(geometry, species, V)
+        return I
+
+    """
+    if R=0:
+        call OML function for correct distribution
+        It should take care of geometry, attracted/repelled
+    elif R=inf:
+        thin sheath
+    else:
+        table
+    """
+
+
 def lafr_norm_current(geometry, R, n, T, q=None, m=None):
 
     if q==None:
