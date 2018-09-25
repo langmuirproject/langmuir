@@ -22,6 +22,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 from scipy.interpolate import interp2d
 from scipy.constants import value as constants
+from scipy.special import gamma
 
 class Species(object):
     """
@@ -153,33 +154,66 @@ class Geometry(object):
 def OML_current(geometry, species, V):
 
     """
-    if sphere:
-        if attracted (q*V<0):
-            if kappa = inf:
-                Cairns
-            else:
-                Kappa-Cairns
-        else: # repelled
-            if kappa = inf:
-                Cairns
-            else:
-                Kappa-Cairns
-    elif cylinder:
-        if attracted (q*V<0):
-            if kappa = inf:
-                Cairns
-            else:
-                Kappa-Cairns
-        else: # repelled
-            if kappa = inf:
-                Cairns
-            else:
-                Kappa-Cairns
-    elif plane:
-        ?
-    else:
-        error
+    Returns the OML current.
+
+    Parameters:
+            geometry: the geometry of the probe (sphere, cylinder or plane)
+            species : plasma species (electron or ion)
+            V       : probe's bias voltage
     """
+    q, m, n, T = species.q, species.m, species.n, species.T
+    kappa, alpha = species.kappa, species.alpha
+    k = constants('Boltzmann constant')
+
+    eta = q*V/(k*T)        # Normalized voltage
+    vth = np.sqrt(k*T/m)   # Thermal velocity
+
+    C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
+    D = (1.+24*alpha*((kappa-1.5)**2/((kappa-2.)*(kappa-3.))))/(1.+15*alpha*((kappa-1.5)/(kappa-2.5)))
+    E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
+
+    if geometry.shape == 'sphere':
+        r = geometry.r
+        I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth
+        F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
+
+        if (q*V>0): # repelled particles
+            if species.dist == 'maxwellian' or species.dist == 'cairns':
+                return I0*np.exp(-eta)*(1.+24*alpha+4*alpha*eta*(eta+4.))/(1.+15*alpha)
+
+            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
+        else: # attracted particles
+            eta = np.abs(eta)
+            if species.dist == 'maxwellian' or species.dist == 'cairns':
+                return I0*(1.+24*alpha+eta*(1.+8.*alpha))/(1.+15*alpha)
+
+            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+                return I0*C*D*(1.+F*eta)
+
+    elif geometry.shape == 'cylinder':
+        r, l = geometry.r, geometry.l
+        I0 = np.sqrt(2*np.pi)*r*l*q*n*vth
+
+        if (q*V>0): # repelled particles
+            if species.dist == 'maxwellian' or species.dist == 'cairns':
+                return I0*np.exp(-eta)*(1.+24*alpha+4*alpha*eta*(eta+4.))/(1.+15*alpha)
+
+            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
+        else: # attracted particles
+            eta = np.abs(eta)
+            if species.dist == 'maxwellian' or species.dist == 'cairns':
+                return I0*(((1.+24*alpha)/(1.+15*alpha))**2+ 4.*eta/np.pi)**0.5
+
+            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+                return I0*((C*D)**2+ 4.*eta/np.pi)**0.5
+
+    elif geometry.shape == 'plane':
+        print("Not implemented yet!")
+
+    else:
+        raise ValueError('Geometry {} not supported'.format(geometry.shape))
 
 def current(geometry, species, V):
 
