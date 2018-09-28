@@ -151,22 +151,33 @@ class Geometry(object):
             self.r = kwargs.pop('r')
             self.l = kwargs.pop('l')
 
-def OML_current(geometry, species, V):
+def OML_current(geometry, species, V, normalized=True):
 
     """
     Returns the OML current.
 
     Parameters:
-            geometry: the geometry of the probe (sphere, cylinder or plane)
-            species : plasma species (electron or ion)
-            V       : probe's bias voltage
+            geometry  (Geometry): geometry of the probe (spherical, cylindrical or planar)
+            species   (Species) : plasma species (electron or ion)
+            V  (int, float, list, tuple, numpy array) : probe's biased voltage
+            normalized (bool) : normalize current with respect to random thermal current 
     """
+    if isinstance(V, (int, float)):
+        V = np.array([V], dtype=np.float)
+    elif isinstance(V, (list, tuple)):
+        V = np.array(V, dtype=np.float)
+
+    I = np.zeros_like(V)
+
     q, m, n, T = species.q, species.m, species.n, species.T
     kappa, alpha = species.kappa, species.alpha
     k = constants('Boltzmann constant')
 
     eta = q*V/(k*T)        # Normalized voltage
     vth = np.sqrt(k*T/m)   # Thermal velocity
+
+    indices_n = np.where(eta > 0)   # indices for repelled particles
+    indices_p = np.where(eta <= 0)  # indices for attracted particles
 
     if kappa == float('inf'):
         C = 1.0
@@ -183,45 +194,59 @@ def OML_current(geometry, species, V):
         r = geometry.r
         I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth # Current due to random particle flux for a spherical probe
 
-        if (q*V>0): # repelled particles
-            if species.dist == 'maxwellian' or species.dist == 'cairns':
-                return I0*C*D*np.exp(-eta)*(1.+E*eta*(eta+4.))
+        # repelled particles:
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_n] = I0 * C * D * np.exp(-eta[indices_n]) * (1. + E * eta[indices_n] * (eta[indices_n] + 4.))
 
-            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
-                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
-        else: # attracted particles
-            eta = np.abs(eta)
-            return I0*C*D*(1.+F*eta)
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
+        
+        # attracted particles:
+        eta[indices_p] = np.abs(eta[indices_p])
+        I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
 
+        if normalized:
+            I /= I0
+            
     elif geometry.shape == 'cylinder':
         r, l = geometry.r, geometry.l
         I0 = np.sqrt(2*np.pi)*r*l*q*n*vth # Current due to random particle flux for a cylindrical probe
 
-        if (q*V>0): # repelled particles
-            if species.dist == 'maxwellian' or species.dist == 'cairns':
-                return I0*C*D*np.exp(-eta)*(1.+E*eta*(eta+4.))
+        # repelled particles:
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_n] = I0 * C * D * \
+                np.exp(-eta[indices_n]) * (1. + E *
+                                           eta[indices_n] * (eta[indices_n] + 4.))
+            
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
-            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
-                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
-        else: # attracted particles
-            """
-            The following expression is an approximation of the OML current for
-            attracted particles, which is excat at eta=0, and gives very good
-            approximation for other values of eta.
+        # attracted particles:
+        """
+        The following expression is an approximation of the OML current for
+        attracted particles, which is exact at eta=0, and gives very good
+        approximation for other values of eta.
 
-            Note that this is not the same as the expression found in the
-            literature, which is only a good approximation for eta>2.
+        Note that this is not the same as the expression found in the
+        literature, which is only a good approximation for eta>2.
 
-            TBD: Maybe we should implement the exact OML expression, as well?
-            """
-            eta = np.abs(eta)
-            return I0*((C*D)**2+ 4.*eta/np.pi)**0.5
+        TBD: Maybe we should implement the exact OML expression, as well?
+        """
+        eta[indices_p] = np.abs(eta[indices_p])
+        I[indices_p] = I0 * ((C * D)**2 + 4. * eta[indices_p] / np.pi)**0.5
 
+        if normalized:
+            I /= I0 
+     
     elif geometry.shape == 'plane':
         print("Not implemented yet!")
 
     else:
         raise ValueError('Geometry {} not supported'.format(geometry.shape))
+    
+    return I 
 
 def current(geometry, species, V):
 
