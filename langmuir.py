@@ -22,7 +22,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 from scipy.interpolate import interp2d
 from scipy.constants import value as constants
-from scipy.special import gamma
+from scipy.special import gamma, erfc, hyp2f1
 
 class Species(object):
     """
@@ -151,7 +151,7 @@ class Geometry(object):
             self.r = kwargs.pop('r')
             self.l = kwargs.pop('l')
 
-def OML_current(geometry, species, V, normalized=True):
+def OML_current(geometry, species, V, normalize=True):
 
     """
     Returns the OML current.
@@ -160,7 +160,7 @@ def OML_current(geometry, species, V, normalized=True):
             geometry  (Geometry): geometry of the probe (spherical, cylindrical or planar)
             species   (Species) : plasma species (electron or ion)
             V  (int, float, list, tuple, numpy array) : probe's biased voltage
-            normalized (bool) : normalize current with respect to random thermal current 
+            normalize (bool) : normalize current with respect to random/thermal current, a la Laframboise
     """
     if isinstance(V, (int, float)):
         V = np.array([V], dtype=np.float)
@@ -206,9 +206,9 @@ def OML_current(geometry, species, V, normalized=True):
         eta[indices_p] = np.abs(eta[indices_p])
         I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
 
-        if normalized:
+        if normalize:
             I /= I0
-            
+
     elif geometry.shape == 'cylinder':
         r, l = geometry.r, geometry.l
         I0 = np.sqrt(2*np.pi)*r*l*q*n*vth # Current due to random particle flux for a cylindrical probe
@@ -224,20 +224,26 @@ def OML_current(geometry, species, V, normalized=True):
                 1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
         # attracted particles:
-        """
-        The following expression is an approximation of the OML current for
-        attracted particles, which is exact at eta=0, and gives very good
-        approximation for other values of eta.
-
-        Note that this is not the same as the expression found in the
-        literature, which is only a good approximation for eta>2.
-
-        TBD: Maybe we should implement the exact OML expression, as well?
-        """
         eta[indices_p] = np.abs(eta[indices_p])
-        I[indices_p] = I0 * ((C * D)**2 + 4. * eta[indices_p] / np.pi)**0.5
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_p] = I0 * C * D * \
+                           ((2. / np.sqrt(np.pi)) * ( 1 - 0.5 * E * eta[indices_p]) * np.sqrt(eta[indices_p]) + \
+                           np.exp(eta[indices_p]) * (1. + E * eta[indices_p] * (eta[indices_p] - 4.)) * erfc(np.sqrt(eta[indices_p])))
+        
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
+            D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
+                (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
+            E = 4. * alpha * kappa * \
+                (kappa - 1.) / ((kappa - .5) *
+                                (kappa - 1.5) + 24 * alpha * (kappa - 1.5)**2)
 
-        if normalized:
+            I[indices_p] = (2./np.sqrt(np.pi))*I0 * C * D * (eta[indices_p]/(kappa-1.5))**(1.-kappa) * \
+                (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
+                ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
+                (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1, kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
+            
+        if normalize:
             I /= I0 
      
     elif geometry.shape == 'plane':
