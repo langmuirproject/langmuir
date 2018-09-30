@@ -236,12 +236,12 @@ def OML_current(geometry, species, V, normalize=True):
                 (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
             E = 4. * alpha * kappa * \
                 (kappa - 1.) / ((kappa - .5) *
-                                (kappa - 1.5) + 24 * alpha * (kappa - 1.5)**2)
+                                (kappa - 1.5) + 3. * alpha * (kappa - 1.5)**2)
 
             I[indices_p] = (2./np.sqrt(np.pi))*I0 * C * D * (eta[indices_p]/(kappa-1.5))**(1.-kappa) * \
                 (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
                 ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
-                (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1, kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
+                (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
             
         if normalize:
             I /= I0 
