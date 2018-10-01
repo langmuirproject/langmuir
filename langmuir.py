@@ -22,7 +22,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 from scipy.interpolate import interp2d
 from scipy.constants import value as constants
-from scipy.special import gamma
+from scipy.special import gamma, erfc, hyp2f1
 
 class Species(object):
     """
@@ -152,22 +152,33 @@ class Geometry(object):
             self.r = kwargs.pop('r')
             self.l = kwargs.pop('l')
 
-def OML_current(geometry, species, V):
+def OML_current(geometry, species, V, normalize=True):
 
     """
     Returns the OML current.
 
     Parameters:
-            geometry: the geometry of the probe (sphere, cylinder or plane)
-            species : plasma species (electron or ion)
-            V       : probe's bias voltage
+            geometry  (Geometry): geometry of the probe (spherical, cylindrical or planar)
+            species   (Species) : plasma species (electron or ion)
+            V  (int, float, list, tuple, numpy array) : probe's biased voltage
+            normalize (bool) : normalize current with respect to random/thermal current, a la Laframboise
     """
+    if isinstance(V, (int, float)):
+        V = np.array([V], dtype=np.float)
+    elif isinstance(V, (list, tuple)):
+        V = np.array(V, dtype=np.float)
+
+    I = np.zeros_like(V)
+
     q, m, n, T = species.q, species.m, species.n, species.T
     kappa, alpha = species.kappa, species.alpha
     k = constants('Boltzmann constant')
 
     eta = q*V/(k*T)        # Normalized voltage
     vth = np.sqrt(k*T/m)   # Thermal velocity
+
+    indices_n = np.where(eta > 0)   # indices for repelled particles
+    indices_p = np.where(eta <= 0)  # indices for attracted particles
 
     if kappa == float('inf'):
         C = 1.0
@@ -184,45 +195,65 @@ def OML_current(geometry, species, V):
         r = geometry.r
         I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth # Current due to random particle flux for a spherical probe
 
-        if (q*V>0): # repelled particles
-            if species.dist == 'maxwellian' or species.dist == 'cairns':
-                return I0*C*D*np.exp(-eta)*(1.+E*eta*(eta+4.))
+        # repelled particles:
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_n] = I0 * C * D * np.exp(-eta[indices_n]) * (1. + E * eta[indices_n] * (eta[indices_n] + 4.))
 
-            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
-                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
-        else: # attracted particles
-            eta = np.abs(eta)
-            return I0*C*D*(1.+F*eta)
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
+        
+        # attracted particles:
+        eta[indices_p] = np.abs(eta[indices_p])
+        I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
+
+        if normalize:
+            I /= I0
 
     elif geometry.shape == 'cylinder':
         r, l = geometry.r, geometry.l
         I0 = np.sqrt(2*np.pi)*r*l*q*n*vth # Current due to random particle flux for a cylindrical probe
 
-        if (q*V>0): # repelled particles
-            if species.dist == 'maxwellian' or species.dist == 'cairns':
-                return I0*C*D*np.exp(-eta)*(1.+E*eta*(eta+4.))
+        # repelled particles:
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_n] = I0 * C * D * \
+                np.exp(-eta[indices_n]) * (1. + E *
+                                           eta[indices_n] * (eta[indices_n] + 4.))
+            
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
-            elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
-                return I0*C*D*(1.+eta/(kappa-1.5))**(1.-kappa) * (1.+E*eta*(eta+4.*( (kappa-1.5)/(kappa-1.))))
-        else: # attracted particles
-            """
-            The following expression is an approximation of the OML current for
-            attracted particles, which is excat at eta=0, and gives very good
-            approximation for other values of eta.
+        # attracted particles:
+        eta[indices_p] = np.abs(eta[indices_p])
+        if species.dist == 'maxwellian' or species.dist == 'cairns':
+            I[indices_p] = I0 * C * D * \
+                           ((2. / np.sqrt(np.pi)) * ( 1 - 0.5 * E * eta[indices_p]) * np.sqrt(eta[indices_p]) + \
+                           np.exp(eta[indices_p]) * (1. + E * eta[indices_p] * (eta[indices_p] - 4.)) * erfc(np.sqrt(eta[indices_p])))
+        
+        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+            C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
+            D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
+                (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
+            E = 4. * alpha * kappa * \
+                (kappa - 1.) / ((kappa - .5) *
+                                (kappa - 1.5) + 3. * alpha * (kappa - 1.5)**2)
 
-            Note that this is not the same as the expression found in the
-            literature, which is only a good approximation for eta>2.
-
-            TBD: Maybe we should implement the exact OML expression, as well?
-            """
-            eta = np.abs(eta)
-            return I0*((C*D)**2+ 4.*eta/np.pi)**0.5
-
+            I[indices_p] = (2./np.sqrt(np.pi))*I0 * C * D * (eta[indices_p]/(kappa-1.5))**(1.-kappa) * \
+                (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
+                ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
+                (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
+            
+        if normalize:
+            I /= I0 
+     
     elif geometry.shape == 'plane':
         raise ValueError('Geometry {} not implemented yet'.format(geometry.shape))
 
     else:
         raise ValueError('Geometry {} not supported'.format(geometry.shape))
+    
+    return I 
 
 def current(geometry, species, V):
 
