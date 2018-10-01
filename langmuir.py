@@ -68,6 +68,7 @@ class Species(object):
     n     : density [m^{-3}]
     T     : temperature [K]
     eV    : temperature [eV] # NOT IMPLEMENTED
+    vth   : thermal velocity [m/s] # NOT IMPLEMENTED
     kappa : kappa (for Kappa and Kappa-Cairns distributions)
     alpha : alpha (for Cairns and Kappa-Cairns distributions)
     """
@@ -218,7 +219,7 @@ def OML_current(geometry, species, V):
             return I0*((C*D)**2+ 4.*eta/np.pi)**0.5
 
     elif geometry.shape == 'plane':
-        print("Not implemented yet!")
+        raise ValueError('Geometry {} not implemented yet'.format(geometry.shape))
 
     else:
         raise ValueError('Geometry {} not supported'.format(geometry.shape))
