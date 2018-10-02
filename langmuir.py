@@ -37,8 +37,8 @@ class Species(object):
         >>> # Kappa-distributed electrons with kappa=2
         >>> species = Species('kappa', n=1e11, T=1000, kappa=2)
 
-        >>> # Doubly charged Maxwellain Oxygen ions # NOT IMPLEMENTED
-        >>> # species = Species(Z=2, amu=16, n=1e11, T=1000)
+        >>> # Doubly charged Maxwellain Oxygen ions with 0.26 eV
+        >>> species = Species(Z=2, amu=16, n=1e11, eV=0.26)
 
         >>> # Cairns-distributed protons with alpha=0.2
         >>> species = Species('cairns', 'proton', n=1e11, T=1000, alpha=0.2)
@@ -62,56 +62,108 @@ class Species(object):
     Keyword parameters:
     -------------------
     m     : mass [kg]
-    amu   : mass [amu] # NOT IMPLEMENTED
+    amu   : mass [amu]
     q     : charge [C]
-    Z     : charge [elementary charges] # NOT IMPLEMENTED
+    Z     : charge [elementary charges]
     n     : density [m^{-3}]
     T     : temperature [K]
-    eV    : temperature [eV] # NOT IMPLEMENTED
-    vth   : thermal velocity [m/s] # NOT IMPLEMENTED
-    kappa : kappa (for Kappa and Kappa-Cairns distributions)
-    alpha : alpha (for Cairns and Kappa-Cairns distributions)
+    eV    : temperature [eV]
+    vth   : thermal velocity [m/s]
+    kappa : spectral index kappa (for Kappa and Kappa-Cairns distributions)
+    alpha : spectral index alpha (for Cairns and Kappa-Cairns distributions)
     """
 
     def __init__(self, *args, **kwargs):
 
         dist = 'maxwellian'
+        dist_specified = False
 
         for arg in args:
             if arg.lower() in ['maxwellian',
                                'kappa',
                                'cairns',
                                'kappa-cairns']:
+
                 dist = arg.lower()
+                if dist_specified:
+                    raise ValueError("Cannot specify both distributions {} and {}".format(dist, arg.lower()))
+
+                dist_specified = True
 
             if arg.lower()=='proton':
-                kwargs['q']=constants('elementary charge')
-                kwargs['m']=constants('proton mass')
+                if 'q' in kwargs:
+                    raise ValueError("Cannot specify both flag 'proton' "
+                                     "and keyword-argument 'q'")
+                if 'amu' in kwargs:
+                    raise ValueError("Cannot specify both flag 'proton' "
+                                     "and keyword-argument 'amu'")
+                if 'm' in kwargs:
+                    raise ValueError("Cannot specify both flag 'proton' "
+                                     "and keyword-argument 'm'")
+                if 'Z' in kwargs:
+                    raise ValueError("Cannot specify both flag 'proton' "
+                                     "and keyword-argument 'Z'")
+
+                self.q = constants('elementary charge')
+                self.m = constants('proton mass')
 
         self.dist = dist
-        self.q = kwargs.pop('q', -constants('elementary charge'))
-        self.m = kwargs.pop('m', constants('electron mass'))
-        self.n = kwargs.pop('n')
+
+        if 'n' in kwargs:
+            self.n = kwargs['n']
+        else:
+            raise ValueError("Must specify 'n'")
+
+        if 'eV' in kwargs:
+            if 'T' in kwargs:
+                raise ValueError("Cannot specify both 'T' and 'eV'")
+            self.T = kwargs['eV']*constants('elementary charge')/constants('Boltzmann constant')
+        elif 'T' in kwargs:
+            self.T = kwargs['T']
+        else:
+            raise ValueError("Must specify 'T' or 'eV'")
+
+        if 'amu' in kwargs:
+            if 'm' in kwargs:
+                raise ValueError("Cannot sepcify both 'm' and 'amu'")
+            self.m = kwargs['amu']*constants('atomic mass constant')
+        elif 'm' in kwargs:
+            self.m = kwargs['m']
+        else:
+            self.m = constants('electron mass')
+
+        if 'Z' in kwargs:
+            if 'q' in kwargs:
+                raise ValueError("Cannot sepcify both 'q' and 'Z'")
+            self.q = kwargs['Z']*constants('elementary charge')
+        elif 'q' in kwargs:
+            self.q = kwargs['q']
+        else:
+            self.q = -constants('elementary charge')
 
         if dist == 'maxwellian':
-            self.T     = kwargs.pop('T')
             self.alpha = 0
             self.kappa = float('inf')
 
         if dist == 'kappa':
-            self.T     = kwargs.pop('T')
+            if not 'kappa' in kwargs:
+                raise ValueError("'kappa' distribution requires 'kappa' argument")
             self.alpha = 0
-            self.kappa = kwargs.pop('kappa')
+            self.kappa = kwargs['kappa']
 
         if dist == 'cairns':
-            self.T     = kwargs.pop('T')
-            self.alpha = kwargs.pop('alpha')
+            if not 'alpha' in kwargs:
+                raise ValueError("'cairns' distribution requires 'alpha' argument")
+            self.alpha = kwargs['alpha']
             self.kappa = float('inf')
 
         if dist == 'kappa-cairns':
-            self.T     = kwargs.pop('T')
-            self.alpha = kwargs.pop('alpha')
-            self.kappa = kwargs.pop('kappa')
+            if not 'kappa' in kwargs:
+                raise ValueError("'kappa-cairns' distribution requires 'kappa' argument")
+            if not 'alpha' in kwargs:
+                raise ValueError("'kappa-cairns' distribution requires 'alpha' argument")
+            self.alpha = kwargs['alpha']
+            self.kappa = kwargs['kappa']
 
 class Geometry(object):
     """
