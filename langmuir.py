@@ -43,7 +43,7 @@ class Species(object):
         >>> # Cairns-distributed protons with alpha=0.2
         >>> species = Species('cairns', 'proton', n=1e11, T=1000, alpha=0.2)
 
-    A plasma is fully specified by a list of species. E.g. for an
+    A plasma is fully specified by a list of species. E.g. for a Maxwellian
     electron-proton plasma::
 
         >>> plasma = []
@@ -58,6 +58,7 @@ class Species(object):
     'kappa-cairns' : Kappa-Cairns distribution
     'electron'     : Elecron species (default)
     'proton'       : Proton species
+    'positron'     : Positron species
 
     Keyword parameters:
     -------------------
@@ -65,7 +66,7 @@ class Species(object):
     amu   : mass [amu]
     q     : charge [C]
     Z     : charge [elementary charges]
-    n     : density [m^{-3}]
+    n     : density [m^(-3)]
     T     : temperature [K]
     eV    : temperature [eV]
     vth   : thermal velocity [m/s]
@@ -75,93 +76,61 @@ class Species(object):
 
     def __init__(self, *args, **kwargs):
 
-        dist = 'maxwellian'
-        dist_specified = False
+        e   = constants('elementary charge')
+        me  = constants('electron mass')
+        mp  = constants('proton mass')
+        k   = constants('Boltzmann constant')
+        amu = constants('atomic mass constant')
 
-        for arg in args:
-            if arg.lower() in ['maxwellian',
-                               'kappa',
-                               'cairns',
-                               'kappa-cairns']:
-
-                dist = arg.lower()
-                if dist_specified:
-                    raise ValueError("Cannot specify both distributions {} and {}".format(dist, arg.lower()))
-
-                dist_specified = True
-
-            if arg.lower()=='proton':
-                if 'q' in kwargs:
-                    raise ValueError("Cannot specify both flag 'proton' "
-                                     "and keyword-argument 'q'")
-                if 'amu' in kwargs:
-                    raise ValueError("Cannot specify both flag 'proton' "
-                                     "and keyword-argument 'amu'")
-                if 'm' in kwargs:
-                    raise ValueError("Cannot specify both flag 'proton' "
-                                     "and keyword-argument 'm'")
-                if 'Z' in kwargs:
-                    raise ValueError("Cannot specify both flag 'proton' "
-                                     "and keyword-argument 'Z'")
-
-                self.q = constants('elementary charge')
-                self.m = constants('proton mass')
-
-        self.dist = dist
-
-        if 'n' in kwargs:
-            self.n = kwargs['n']
-        else:
-            raise ValueError("Must specify 'n'")
-
-        if 'eV' in kwargs:
-            if 'T' in kwargs:
-                raise ValueError("Cannot specify both 'T' and 'eV'")
-            self.T = kwargs['eV']*constants('elementary charge')/constants('Boltzmann constant')
-        elif 'T' in kwargs:
-            self.T = kwargs['T']
-        else:
-            raise ValueError("Must specify 'T' or 'eV'")
-
-        if 'amu' in kwargs:
-            if 'm' in kwargs:
-                raise ValueError("Cannot sepcify both 'm' and 'amu'")
-            self.m = kwargs['amu']*constants('atomic mass constant')
-        elif 'm' in kwargs:
-            self.m = kwargs['m']
-        else:
-            self.m = constants('electron mass')
+        self.dist = 'maxwellian'
+        valid_dists = ['maxwellian', 'kappa', 'cairns', 'kappa-cairns']
 
         if 'Z' in kwargs:
-            if 'q' in kwargs:
-                raise ValueError("Cannot sepcify both 'q' and 'Z'")
-            self.q = kwargs['Z']*constants('elementary charge')
-        elif 'q' in kwargs:
-            self.q = kwargs['q']
+            self.q = kwargs['Z']*e
         else:
-            self.q = -constants('elementary charge')
+            self.q = kwargs.pop('q', -e)
 
-        if dist == 'maxwellian':
+        if 'amu' in kwargs:
+            self.m = kwargs['amu']*amu
+        else:
+            self.m = kwargs.pop('m', me)
+
+        for arg in args:
+            if arg.lower() in valid_dists:
+                self.dist = arg.lower()
+
+            if arg.lower()=='proton':
+                self.q = e
+                self.m = mp
+
+            if arg.lower()=='positron':
+                self.q = e
+                self.m = me
+
+        self.n = kwargs['n']
+
+        if 'eV' in kwargs:
+            self.T = kwargs['eV']*e/k
+        elif 'vth' in kwargs:
+            self.T = self.m*kwargs['vth']**2/k
+        else:
+            self.T = kwargs['T']
+
+        self.vth = np.sqrt(k*self.T/self.m)
+
+        if self.dist == 'maxwellian':
             self.alpha = 0
             self.kappa = float('inf')
 
-        if dist == 'kappa':
-            if not 'kappa' in kwargs:
-                raise ValueError("'kappa' distribution requires 'kappa' argument")
+        if self.dist == 'kappa':
             self.alpha = 0
             self.kappa = kwargs['kappa']
 
-        if dist == 'cairns':
-            if not 'alpha' in kwargs:
-                raise ValueError("'cairns' distribution requires 'alpha' argument")
+        if self.dist == 'cairns':
             self.alpha = kwargs['alpha']
             self.kappa = float('inf')
 
-        if dist == 'kappa-cairns':
-            if not 'kappa' in kwargs:
-                raise ValueError("'kappa-cairns' distribution requires 'kappa' argument")
-            if not 'alpha' in kwargs:
-                raise ValueError("'kappa-cairns' distribution requires 'alpha' argument")
+        if self.dist == 'kappa-cairns':
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
 
@@ -307,23 +276,24 @@ def OML_current(geometry, species, V, normalize=True):
     
     return I 
 
-def current(geometry, species, V):
 
-    if isinstance(species, list):
-        I = 0
-        for s in species:
-            I += current(geometry, species, V)
-        return I
+# def current(geometry, species, V):
 
-    """
-    if R=0:
-        call OML function for correct distribution
-        It should take care of geometry, attracted/repelled
-    elif R=inf:
-        thin sheath
-    else:
-        table
-    """
+#     if isinstance(species, list):
+#         I = 0
+#         for s in species:
+#             I += current(geometry, species, V)
+#         return I
+
+#     """
+#     if R=0:
+#         call OML function for correct distribution
+#         It should take care of geometry, attracted/repelled
+#     elif R=inf:
+#         thin sheath
+#     else:
+#         table
+#     """
 
 
 def lafr_norm_current(geometry, R, n, T, q=None, m=None):
