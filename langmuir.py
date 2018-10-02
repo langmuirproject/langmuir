@@ -156,7 +156,7 @@ class Sphere(object):
     def __init__(self, r):
         self.r
 
-def OML_current(geometry, species, V, normalize=True):
+def OML_current(geometry, species, V, normalize=False):
 
     """
     Returns the OML current.
@@ -168,6 +168,15 @@ def OML_current(geometry, species, V, normalize=True):
     V  (int, float, list, tuple, numpy array) : probe's biased voltage
     normalize (bool)                          : normalize current with respect to random/thermal current, a la Laframboise
     """
+
+    if isinstance(species, list):
+        if normalize == True:
+            raise ValueError('Cannot normalize to more than one species')
+        I = 0
+        for s in species:
+            I += OML_current(geometry, s, V)
+        return I
+
     if isinstance(V, (int, float)):
         V = np.array([V], dtype=np.float)
     elif isinstance(V, (list, tuple)):

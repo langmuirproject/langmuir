@@ -129,3 +129,10 @@ def test_species_eV():
     e = constants('elementary charge')
     k = constants('Boltzmann constant')
     assert(s.T == approx(0.2*e/k))
+
+def test_OML_current_not_normalized_by_default():
+    geometry = Cylinder(0.255e-3, 25e-3)
+    species  = Species(n=10e10, eV=0.26)
+    I1 = OML_current(geometry, species, 5)
+    I2 = OML_current(geometry, species, 5, normalize=False)
+    assert(I1 == approx(I2))

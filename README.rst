@@ -22,8 +22,28 @@ Or download the GitHub repository https://github.com/sigvaldm/langmuir.git and r
 
     python setup.py install
 
-Usage
------
+Usage of OML Functions
+----------------------
+
+To compute the current collected for a sweep of voltages by a 25mm long cylindrical probe with radius 0.255mm in a plasma consisting of oxygen ions and electrons with density 1e11 and temperature of 1000K::
+
+    >>> from langmuir import *
+    >>> import numpy as np
+
+    >>> n = 1e11
+    >>> T = 1000
+    >>> r = 0.266e-3
+    >>> l = 25e-3
+
+    >>> plasma = []
+    >>> plasma.append(Species('electron' , n=n, T=T))
+    >>> plasma.append(Species(amu=16, Z=1, n=n, T=T))
+
+    >>> Vs = np.linspace(-10, 10, 100)
+    >>> Is = OML_current(Cylinder(r, l), plasma, Vs)
+
+Usage of Tables
+---------------
 
 The tables for attracted-species current for finite-radius probes in an isothermal Maxwellian plasma given by Laframboise is implemented. E.g. to get the normalized current for a spherical probe of 1 Debye length and a normalized potential of 25::
 
