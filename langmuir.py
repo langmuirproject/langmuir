@@ -134,44 +134,27 @@ class Species(object):
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
 
-class Geometry(object):
+class Plane(object):
     """
-    Specifies a probe geometry. Examples::
-
-        >>> # Plane probe with 0.01 m^2 area
-        >>> geometry = Geometry('plane', A=0.01)
-
-        >>> # Cylindrical probe with 1e-3 m radius and 25e-3 m length
-        >>> geometry = Geometry('cylinder', r=1e-3, l=25e-3)
-
-        >>> # Spherical probe with 1e-2 m radius
-        >>> geometry = Geometry('sphere', r=0.01)
-
-    Flags:
-    ------
-    'plane'    : Plane probe
-    'cylinder' : Cylindrical probe (default)
-    'sphere'   : Spherical probe
-
-    Keyword parameters:
-    -------------------
-    r : radius [m]
-    l : length [m]
-    A : area [m^2]
+    A plane with specified area A [m^2]
     """
-    def __init__(self, shape='cylinder', **kwargs):
-        self.shape = shape.lower()
-        assert self.shape in ['plane', 'sphere', 'cylinder']
+    def __init__(self, A):
+        self.A = A
 
-        if shape == 'plane':
-            self.A = kwargs.pop('A')
+class Cylinder(object):
+    """
+    A cylinder with specified radius r [m] and length l [m]
+    """
+    def __init__(self, r, l):
+        self.r = r
+        self.l = l
 
-        if shape == 'sphere':
-            self.r = kwargs.pop('r')
-
-        if shape == 'cylinder':
-            self.r = kwargs.pop('r')
-            self.l = kwargs.pop('l')
+class Sphere(object):
+    """
+    A sphere with specified radius r [m]
+    """
+    def __init__(self, r):
+        self.r
 
 def OML_current(geometry, species, V, normalize=True):
 
@@ -179,10 +162,11 @@ def OML_current(geometry, species, V, normalize=True):
     Returns the OML current.
 
     Parameters:
-            geometry  (Geometry): geometry of the probe (spherical, cylindrical or planar)
-            species   (Species) : plasma species (electron or ion)
-            V  (int, float, list, tuple, numpy array) : probe's biased voltage
-            normalize (bool) : normalize current with respect to random/thermal current, a la Laframboise
+    -----------
+    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
+    species   (Species, list of Species)      : plasma species
+    V  (int, float, list, tuple, numpy array) : probe's biased voltage
+    normalize (bool)                          : normalize current with respect to random/thermal current, a la Laframboise
     """
     if isinstance(V, (int, float)):
         V = np.array([V], dtype=np.float)
@@ -212,7 +196,7 @@ def OML_current(geometry, species, V, normalize=True):
         E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
         F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
 
-    if geometry.shape == 'sphere':
+    if isinstance(geometry, Sphere):
         r = geometry.r
         I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth # Current due to random particle flux for a spherical probe
 
@@ -223,7 +207,7 @@ def OML_current(geometry, species, V, normalize=True):
         elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
             I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
-        
+
         # attracted particles:
         eta[indices_p] = np.abs(eta[indices_p])
         I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
@@ -231,7 +215,7 @@ def OML_current(geometry, species, V, normalize=True):
         if normalize:
             I /= I0
 
-    elif geometry.shape == 'cylinder':
+    elif isinstance(geometry, Cylinder):
         r, l = geometry.r, geometry.l
         I0 = np.sqrt(2*np.pi)*r*l*q*n*vth # Current due to random particle flux for a cylindrical probe
 
@@ -240,7 +224,7 @@ def OML_current(geometry, species, V, normalize=True):
             I[indices_n] = I0 * C * D * \
                 np.exp(-eta[indices_n]) * (1. + E *
                                            eta[indices_n] * (eta[indices_n] + 4.))
-            
+
         elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
             I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
@@ -251,7 +235,7 @@ def OML_current(geometry, species, V, normalize=True):
             I[indices_p] = I0 * C * D * \
                            ((2. / np.sqrt(np.pi)) * ( 1 - 0.5 * E * eta[indices_p]) * np.sqrt(eta[indices_p]) + \
                            np.exp(eta[indices_p]) * (1. + E * eta[indices_p] * (eta[indices_p] - 4.)) * erfc(np.sqrt(eta[indices_p])))
-        
+
         elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
             C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
             D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
@@ -264,17 +248,14 @@ def OML_current(geometry, species, V, normalize=True):
                 (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
                 ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
                 (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
-            
+
         if normalize:
-            I /= I0 
-     
-    elif geometry.shape == 'plane':
-        raise ValueError('Geometry {} not implemented yet'.format(geometry.shape))
+            I /= I0
 
     else:
         raise ValueError('Geometry {} not supported'.format(geometry.shape))
-    
-    return I 
+
+    return I
 
 
 # def current(geometry, species, V):
