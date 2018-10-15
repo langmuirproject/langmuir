@@ -154,7 +154,7 @@ class Sphere(object):
     A sphere with specified radius r [m]
     """
     def __init__(self, r):
-        self.r
+        self.r = r
 
 def OML_current(geometry, species, V, normalize=False):
 
