@@ -229,7 +229,7 @@ def OML_current(geometry, species, V, normalize=False):
     if normalize:
         I0 = 1
     else:
-        I0 = thermal_current(geometry, species)
+        I0 = normalization_current(geometry, species)
 
     if isinstance(geometry, Sphere):
         r = geometry.r
@@ -325,9 +325,12 @@ def lafr_current(geometry, species, V, normalize=False):
 
     return I
 
-def thermal_current(geometry, species):
+def normalization_current(geometry, species):
     """
-    Returns the thermal current due to random particle flux
+    Returns the normalization current for the given species and geometry.
+    The normalization current is the current the species would have contributed
+    to a neutral probe due to random thermal movements of particles if the species
+    had been Maxwellian.
 
     Parameters:
     -----------
@@ -338,7 +341,7 @@ def thermal_current(geometry, species):
     if isinstance(species, list):
         I = 0
         for s in species:
-            I += thermal_current(geometry, s)
+            I += normalization_current(geometry, s)
         return I
 
     q, n, vth = species.q, species.n, species.vth
@@ -355,6 +358,27 @@ def thermal_current(geometry, species):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     return I0
+
+def thermal_current(geometry, species):
+    """
+    Returns the thermal current for the given species and geometry. The
+    thermal current is the current the species contributes to a neutral
+    probe due to random thermal movements of particles.
+
+    Parameters:
+    -----------
+    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
+    species   (Species, list of Species)      : plasma species
+    """
+
+    if isinstance(species, list):
+        I = 0
+        for s in species:
+            I += thermal_current(geometry, s)
+        return I
+
+    pass # Implement here
+
 
 def lafr_attr_current(geometry, kind='linear'):
 
