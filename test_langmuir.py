@@ -130,6 +130,41 @@ def test_species_eV():
     k = constants('Boltzmann constant')
     assert(s.T == approx(0.2*e/k))
 
+def test_species_repr():
+    # A good representation of a (small) object is one you can use to recreate
+    # the object
+    s  = Species('kappa-cairns', q=1, m=3, n=1000, T=1000, kappa=6, alpha=0.2)
+    s2 = eval(str(s))
+    assert(s2.q == approx(s.q))
+    assert(s2.m == approx(s.m))
+    assert(s2.n == approx(s.n))
+    assert(s2.T == approx(s.T))
+    assert(s2.kappa == approx(s.kappa))
+    assert(s2.alpha == approx(s.alpha))
+    assert(s2.dist == s.dist)
+
+def test_plane_repr():
+    # A good representation of a (small) object is one you can use to recreate
+    # the object
+    g  = Plane(3)
+    g2 = eval(str(g))
+    assert(g2.A == approx(g.A))
+
+def test_cylinder_repr():
+    # A good representation of a (small) object is one you can use to recreate
+    # the object
+    g  = Cylinder(3,2)
+    g2 = eval(str(g))
+    assert(g2.r == approx(g.r))
+    assert(g2.l == approx(g.l))
+
+def test_sphere_repr():
+    # A good representation of a (small) object is one you can use to recreate
+    # the object
+    g  = Sphere(3)
+    g2 = eval(str(g))
+    assert(g2.r == approx(g.r))
+
 def test_OML_current_not_normalized_by_default():
     geometry = Cylinder(0.255e-3, 25e-3)
     species  = Species(n=10e10, eV=0.26)

@@ -134,12 +134,29 @@ class Species(object):
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
 
+    def __repr__(self):
+
+        s = "Species('{}', q={}, m={}, n={}, T={}".format(self.dist, self.q, self.m, self.n, self.T)
+
+        if(self.dist == 'kappa' or self.dist == 'kappa-cairns'):
+            s += ", kappa={}".format(self.kappa)
+
+        if(self.dist == 'cairns' or self.dist == 'kappa-cairns'):
+            s += ", alpha={}".format(self.alpha)
+
+        s += ")"
+
+        return s
+
+
 class Plane(object):
     """
     A plane with specified area A [m^2]
     """
     def __init__(self, A):
         self.A = A
+    def __repr__(self):
+        return "Plane(A={})".format(self.A)
 
 class Cylinder(object):
     """
@@ -148,6 +165,8 @@ class Cylinder(object):
     def __init__(self, r, l):
         self.r = r
         self.l = l
+    def __repr__(self):
+        return "Cylinder(r={}, l={})".format(self.r, self.l)
 
 class Sphere(object):
     """
@@ -155,6 +174,8 @@ class Sphere(object):
     """
     def __init__(self, r):
         self.r = r
+    def __repr__(self):
+        return "Sphere(r={})".format(self.r)
 
 def OML_current(geometry, species, V, normalize=False):
 
@@ -186,10 +207,10 @@ def OML_current(geometry, species, V, normalize=False):
 
     q, m, n, T = species.q, species.m, species.n, species.T
     kappa, alpha = species.kappa, species.alpha
+    vth = species.vth
     k = constants('Boltzmann constant')
 
     eta = q*V/(k*T)        # Normalized voltage
-    vth = np.sqrt(k*T/m)   # Thermal velocity
 
     indices_n = np.where(eta > 0)   # indices for repelled particles
     indices_p = np.where(eta <= 0)  # indices for attracted particles
@@ -284,6 +305,28 @@ def OML_current(geometry, species, V, normalize=False):
 #     else:
 #         table
 #     """
+
+
+def lafr_current(geometry, species, V, normalize=False):
+
+    if isinstance(species, list):
+        if normalize == True:
+            raise ValueError('Cannot normalize to more than one species')
+        I = 0
+        for s in species:
+            I += lafr_current(geometry, s, V)
+        return I
+
+    q, m, n, T = species.q, species.m, species.n, species.T
+
+    # if isinstance(geometry, Sphere):
+
+    # elif isinstance(geometry, Cylinder):
+
+    # else:
+    #     raise ValueError('Geometry {} not supported'.format(geometry.shape))
+
+    return I
 
 
 def lafr_norm_current(geometry, R, n, T, q=None, m=None):
