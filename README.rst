@@ -1,8 +1,8 @@
 Langmuir
 ========
 
-.. image:: https://travis-ci.com/sigvaldm/langmuir.svg?branch=master
-    :target: https://travis-ci.com/sigvaldm/langmuir
+.. image:: https://travis-ci.com/langmuirproject/langmuir.svg?branch=master
+    :target: https://travis-ci.com/langmuirproject/langmuir
 
 .. image:: https://coveralls.io/repos/github/sigvaldm/langmuir/badge.svg?branch=master
     :target: https://coveralls.io/github/sigvaldm/langmuir?branch=master
@@ -18,7 +18,7 @@ Install from PyPI using ``pip`` (preferred method)::
 
     pip install langmuir
 
-Or download the GitHub repository https://github.com/sigvaldm/langmuir.git and run::
+Or download the GitHub repository https://github.com/langmuirproject/langmuir.git and run::
 
     python setup.py install
 
