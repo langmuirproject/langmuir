@@ -165,24 +165,24 @@ def test_sphere_repr():
     g2 = eval(str(g))
     assert(g2.r == approx(g.r))
 
-def test_thermal_current():
+def test_normalization_current():
     sph = Sphere(1e-3)
     cyl = Cylinder(1e-3,10e-3)
     sp  = Species(n=1e11, T=1000)
-    assert(thermal_current(sph, sp) == approx(-9.888431090271652e-09))
-    assert(thermal_current(cyl, sp) == approx(-4.944215545135826e-08))
+    assert(normalization_current(sph, sp) == approx(-9.888431090271652e-09))
+    assert(normalization_current(cyl, sp) == approx(-4.944215545135826e-08))
 
     with pytest.raises(ValueError):
-        thermal_current(None, sp)
+        normalization_current(None, sp)
 
-def test_thermal_current_multiple_species():
+def test_normalization_current_multiple_species():
     cyl = Cylinder(1e-3,10e-3)
     plasma = []
     plasma.append(Species('electron', n=1e11, T=1000))
     plasma.append(Species('proton',   n=1e11, T=1000))
-    I0_n = thermal_current(cyl, plasma[0])
-    I0_p = thermal_current(cyl, plasma[1])
-    assert(thermal_current(cyl, plasma) == approx(I0_n+I0_p))
+    I0_n = normalization_current(cyl, plasma[0])
+    I0_p = normalization_current(cyl, plasma[1])
+    assert(normalization_current(cyl, plasma) == approx(I0_n+I0_p))
 
 def test_OML_current_not_normalized_by_default():
     geometry = Cylinder(0.255e-3, 25e-3)
