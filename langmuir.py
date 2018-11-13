@@ -226,9 +226,13 @@ def OML_current(geometry, species, V, normalize=False):
         E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
         F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
 
+    if normalize:
+        I0 = 1
+    else:
+        I0 = thermal_current(geometry, species)
+
     if isinstance(geometry, Sphere):
         r = geometry.r
-        I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth # Current due to random particle flux for a spherical probe
 
         # repelled particles:
         if species.dist == 'maxwellian' or species.dist == 'cairns':
@@ -242,12 +246,8 @@ def OML_current(geometry, species, V, normalize=False):
         eta[indices_p] = np.abs(eta[indices_p])
         I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
 
-        if normalize:
-            I /= I0
-
     elif isinstance(geometry, Cylinder):
         r, l = geometry.r, geometry.l
-        I0 = np.sqrt(2*np.pi)*r*l*q*n*vth # Current due to random particle flux for a cylindrical probe
 
         # repelled particles:
         if species.dist == 'maxwellian' or species.dist == 'cairns':
@@ -279,11 +279,8 @@ def OML_current(geometry, species, V, normalize=False):
                 ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
                 (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
 
-        if normalize:
-            I /= I0
-
     else:
-        raise ValueError('Geometry {} not supported'.format(geometry.shape))
+        raise ValueError('Geometry not supported: {}'.format(geometry))
 
     return I
 
@@ -328,23 +325,34 @@ def lafr_current(geometry, species, V, normalize=False):
 
     return I
 
+def thermal_current(geometry, species):
+    """
+    Returns the thermal current due to random particle flux
 
-def lafr_norm_current(geometry, R, n, T, q=None, m=None):
+    Parameters:
+    -----------
+    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
+    species   (Species, list of Species)      : plasma species
+    """
 
-    if q==None:
-        q = -constants('elementary charge')
+    if isinstance(species, list):
+        I = 0
+        for s in species:
+            I += thermal_current(geometry, s)
+        return I
 
-    if m==None:
-        m = constants('electron mass')
+    q, n, vth = species.q, species.n, species.vth
 
-    k = constants('Boltzmann constant')
+    if isinstance(geometry, Sphere):
+        r = geometry.r
+        I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth
 
-    if geometry.lower()=='sphere':
-        I0 = q*n*R**2*np.sqrt(8*np.pi*k*T/m)
-    elif geometry.lower()=='cylinder':
-        I0 = q*n*R*np.sqrt(2*np.pi*k*T/m)
+    elif isinstance(geometry, Cylinder):
+        r, l = geometry.r, geometry.l
+        I0 = np.sqrt(2*np.pi)*r*l*q*n*vth
+
     else:
-        raise ValueError('Geometry {} not supported'.format(geometry))
+        raise ValueError('Geometry not supported: {}'.format(geometry))
 
     return I0
 
