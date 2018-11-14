@@ -20,9 +20,14 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import numpy as np
-from scipy.interpolate import interp2d
+import logging
+from langmuir.tables import *
+from scipy.interpolate import griddata
 from scipy.constants import value as constants
 from scipy.special import gamma, erfc, hyp2f1
+
+logger = logging.getLogger('langmuir')
+logging.basicConfig()
 
 class Species(object):
     """
@@ -76,11 +81,12 @@ class Species(object):
 
     def __init__(self, *args, **kwargs):
 
-        e   = constants('elementary charge')
-        me  = constants('electron mass')
-        mp  = constants('proton mass')
-        k   = constants('Boltzmann constant')
-        amu = constants('atomic mass constant')
+        e    = constants('elementary charge')
+        me   = constants('electron mass')
+        mp   = constants('proton mass')
+        k    = constants('Boltzmann constant')
+        eps0 = constants('electric constant')
+        amu  = constants('atomic mass constant')
 
         self.dist = 'maxwellian'
         valid_dists = ['maxwellian', 'kappa', 'cairns', 'kappa-cairns']
@@ -121,18 +127,25 @@ class Species(object):
         if self.dist == 'maxwellian':
             self.alpha = 0
             self.kappa = float('inf')
+            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))
 
         if self.dist == 'kappa':
             self.alpha = 0
             self.kappa = kwargs['kappa']
+            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))
+            logger.warning("Debye length is only correct for Maxwellian. Should be fixed")
 
         if self.dist == 'cairns':
             self.alpha = kwargs['alpha']
             self.kappa = float('inf')
+            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))
+            logger.warning("Debye length is only correct for Maxwellian. Should be fixed")
 
         if self.dist == 'kappa-cairns':
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
+            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))
+            logger.warning("Debye length is only correct for Maxwellian. Should be fixed")
 
     def __repr__(self):
 
@@ -177,7 +190,68 @@ class Sphere(object):
     def __repr__(self):
         return "Sphere(r={})".format(self.r)
 
-def OML_current(geometry, species, V, normalize=False):
+def normalization_current(geometry, species):
+    """
+    Returns the normalization current for the given species and geometry.
+    The normalization current is the current the species would have contributed
+    to a neutral probe due to random thermal movements of particles if the species
+    had been Maxwellian.
+
+    Parameters:
+    -----------
+    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
+    species   (Species, list of Species)      : plasma species
+    """
+
+    if isinstance(species, list):
+        I = 0
+        for s in species:
+            I += normalization_current(geometry, s)
+        return I
+
+    q, n, vth = species.q, species.n, species.vth
+
+    if isinstance(geometry, Sphere):
+        r = geometry.r
+        I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth
+
+    elif isinstance(geometry, Cylinder):
+        r, l = geometry.r, geometry.l
+        I0 = np.sqrt(2*np.pi)*r*l*q*n*vth
+
+    else:
+        raise ValueError('Geometry not supported: {}'.format(geometry))
+
+    return I0
+
+def thermal_current(geometry, species):
+    """
+    Returns the thermal current for the given species and geometry. The
+    thermal current is the current the species contributes to a neutral
+    probe due to random thermal movements of particles.
+
+    Parameters:
+    -----------
+    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
+    species   (Species, list of Species)      : plasma species
+    """
+
+    if isinstance(species, list):
+        I = 0
+        for s in species:
+            I += thermal_current(geometry, s)
+        return I
+
+    raise NotImplementedError
+
+def make_array(arr):
+    if isinstance(arr, (int, float)):
+        arr = np.array([arr], dtype=np.float)
+    elif isinstance(arr, (list, tuple)):
+        arr = np.array(arr, dtype=np.float)
+    return arr
+
+def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     """
     Returns the OML current.
@@ -192,28 +266,31 @@ def OML_current(geometry, species, V, normalize=False):
 
     if isinstance(species, list):
         if normalize == True:
-            raise ValueError('Cannot normalize to more than one species')
+            logger.error('Cannot normalize current to more than one species')
+            return None
+        if eta is not None:
+            logger.error('Cannot normalize voltage to more than one species')
+            return None
         I = 0
         for s in species:
-            I += OML_current(geometry, s, V)
+            I += OML_current(geometry, s, V, eta)
         return I
-
-    if isinstance(V, (int, float)):
-        V = np.array([V], dtype=np.float)
-    elif isinstance(V, (list, tuple)):
-        V = np.array(V, dtype=np.float)
-
-    I = np.zeros_like(V)
 
     q, m, n, T = species.q, species.m, species.n, species.T
     kappa, alpha = species.kappa, species.alpha
     vth = species.vth
     k = constants('Boltzmann constant')
 
-    eta = q*V/(k*T)        # Normalized voltage
+    if V is not None:
+        V = make_array(V)
+        eta = q*V/(k*T)
+    else:
+        eta = make_array(eta)
 
-    indices_n = np.where(eta > 0)   # indices for repelled particles
-    indices_p = np.where(eta <= 0)  # indices for attracted particles
+    I = np.zeros_like(eta)
+
+    indices_n = np.where(eta > 0)[0]   # indices for repelled particles
+    indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
     if kappa == float('inf'):
         C = 1.0
@@ -284,6 +361,66 @@ def OML_current(geometry, species, V, normalize=False):
 
     return I
 
+def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False):
+
+    if isinstance(species, list):
+        if normalize == True:
+            logger.error('Cannot normalize current to more than one species')
+            return None
+        if eta is not None:
+            logger.error('Cannot normalize voltage to more than one species')
+            return None
+        I = 0
+        for s in species:
+            I += tabulated_current(geometry, s, V, eta, table)
+        return I
+
+    q, m, n, T = species.q, species.m, species.n, species.T
+    kappa, alpha = species.kappa, species.alpha
+    k = constants('Boltzmann constant')
+
+    if V is not None:
+        V = make_array(V)
+        eta = q*V/(k*T)
+    else:
+        eta = make_array(eta)
+
+    I = np.zeros_like(eta)
+
+    indices_n = np.where(eta > 0)[0]   # indices for repelled particles
+    indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
+
+    R = geometry.r/species.debye
+
+    if normalize:
+        I0 = 1
+    else:
+        I0 = normalization_current(geometry, species)
+
+    if isinstance(geometry, Sphere):
+        table += ' sphere'
+    elif isinstance(geometry, Cylinder):
+        table += ' cylinder'
+
+    if "darian-marholm" in table:
+        table = get_table(table)
+        I[indices_p] = I0*griddata(table['points'], table['values'], (R, -eta[indices_p], kappa, alpha))
+    else:
+        table = get_table(table)
+        I[indices_p] = I0*griddata(table['points'], table['values'], (R, -eta[indices_p]))
+        if(kappa != float('inf') or alpha != 0):
+            logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
+
+    if len(indices_n)>0:
+        pos_neg = "positive" if q>0 else "negative"
+        logger.warning("Only attracted species current is covered by tabulated "
+                       "values. Currents due to {} is set to zero for "
+                       "{} potentials".format(species, pos_neg))
+
+    if any(np.isnan(I)):
+        logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
+
+    return I
 
 # def current(geometry, species, V):
 
@@ -303,125 +440,3 @@ def OML_current(geometry, species, V, normalize=False):
 #         table
 #     """
 
-
-def lafr_current(geometry, species, V, normalize=False):
-
-    if isinstance(species, list):
-        if normalize == True:
-            raise ValueError('Cannot normalize to more than one species')
-        I = 0
-        for s in species:
-            I += lafr_current(geometry, s, V)
-        return I
-
-    q, m, n, T = species.q, species.m, species.n, species.T
-
-    # if isinstance(geometry, Sphere):
-
-    # elif isinstance(geometry, Cylinder):
-
-    # else:
-    #     raise ValueError('Geometry {} not supported'.format(geometry.shape))
-
-    return I
-
-def normalization_current(geometry, species):
-    """
-    Returns the normalization current for the given species and geometry.
-    The normalization current is the current the species would have contributed
-    to a neutral probe due to random thermal movements of particles if the species
-    had been Maxwellian.
-
-    Parameters:
-    -----------
-    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
-    species   (Species, list of Species)      : plasma species
-    """
-
-    if isinstance(species, list):
-        I = 0
-        for s in species:
-            I += normalization_current(geometry, s)
-        return I
-
-    q, n, vth = species.q, species.n, species.vth
-
-    if isinstance(geometry, Sphere):
-        r = geometry.r
-        I0 = 2*np.sqrt(2*np.pi)*r**2*q*n*vth
-
-    elif isinstance(geometry, Cylinder):
-        r, l = geometry.r, geometry.l
-        I0 = np.sqrt(2*np.pi)*r*l*q*n*vth
-
-    else:
-        raise ValueError('Geometry not supported: {}'.format(geometry))
-
-    return I0
-
-def thermal_current(geometry, species):
-    """
-    Returns the thermal current for the given species and geometry. The
-    thermal current is the current the species contributes to a neutral
-    probe due to random thermal movements of particles.
-
-    Parameters:
-    -----------
-    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
-    species   (Species, list of Species)      : plasma species
-    """
-
-    if isinstance(species, list):
-        I = 0
-        for s in species:
-            I += thermal_current(geometry, s)
-        return I
-
-    pass # Implement here
-
-
-def lafr_attr_current(geometry, kind='linear'):
-
-    if geometry.lower()=='sphere':
-        Rs =  [0, 0.2, 0.3, 0.5, 1, 2, 3, 5, 7.5, 10, 15, 20, 50, 100]
-
-        Vs =  [0.0  , 0.1  , 0.3  , 0.6  , 1.0  , 1.5  , 2.0  , 3.0  , 5.0  , 7.5  , 10.0  , 15.0  , 20.0  , 25.0]
-        Is = [[1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 26.000],   # R=0
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 25.763],   # R=0.2
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 25.462],   # R=0.3
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.493, 2.987, 3.970, 5.917, 8.324, 10.704, 15.403, 20.031, 24.607],   # R=0.5
-              [1.000, 1.0999,1.299, 1.595, 1.987, 2.469, 2.945, 3.878, 5.687, 7.871,  9.990, 14.085, 18.041, 21.895],   # R=1
-              [1.000, 1.0999,1.299, 1.584, 1.955, 2.399, 2.824, 3.632, 5.126, 6.847,  8.460, 11.482, 14.314, 17.018],   # R=2
-              [1.000, 1.0999,1.293, 1.572, 1.922, 2.329, 2.709, 3.406, 4.640, 6.007,  7.258,  9.542, 11.636, 13.603],   # R=3
-              [1.000, 1.099, 1.288, 1.552, 1.869, 2.219, 2.529, 3.086, 3.957, 4.887,  5.710,  7.167,  8.473,  9.676],   # R=5
-              [1.000, 1.099, 1.288, 1.552, 1.869, 2.219, 2.529, 3.086, 3.957, 4.094,  4.658,  5.645,  6.518,  7.318],   # R=7.5
-              [1.000, 1.098, 1.280, 1.518, 1.783, 2.050, 2.226, 2.609, 3.119, 3.620,  4.050,  4.796,  5.453,  6.053],   # R=10
-              [1.000, 1.098, 1.280, 1.518, 1.783, 2.050, 2.226, 2.609, 3.119, 3.620,  4.050,  4.796,  4.318,  4.719],   # R=15
-              [1.000, 1.097, 1.269, 1.481, 1.694, 1.887, 2.030, 2.235, 2.516, 2.779,  3.002,  3.383,  3.716,  4.018],   # R=20
-              [1.000, 1.095, 1.255, 1.433, 1.592, 1.719, 1.803, 1.910, 2.037, 2.148,  2.241,  2.397,  2.532,  2.658],   # R=50
-              [1.000, 1.094, 1.245, 1.402, 1.534, 1.632, 1.694, 1.762, 1.833, 1.891,  1.938,  2.022,  2.097,  2.166]]   # R=100
-
-    elif geometry.lower()=='cylinder':
-        Rs =  [0, 1, 1.5, 2, 2.5, 3, 4, 5, 10, 20, 30, 40, 50, 100]
-
-        Vs =  [0.0  , 0.1   , 0.3   , 0.6   , 1.0   , 1.5   , 2.0   , 3.0   , 5.0   , 7.5   , 10.0  , 15.0  , 20.0  , 25.0]
-        Is = [[1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.7388, 4.5114, 5.1695, 5.7526],   # R=0
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.7388, 4.5114, 5.1695, 5.7525],   # R=1
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.735 , 4.493 , 5.141 , 5.711 ],   # R=1.5
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.247 , 2.750 , 3.266 , 3.703 , 4.439 , 5.060 , 5.607 ],   # R=2
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.237 , 2.731 , 3.227 , 3.645 , 4.342 , 4.936 , 5.462 ],   # R=2.5
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.754 , 1.928 , 2.226 , 2.701 , 3.174 , 3.567 , 4.235 , 4.789 , 5.291 ],   # R=3
-              [1.000, 1.0804, 1.2101, 1.3721, 1.554 , 1.747 , 1.913 , 2.192 , 2.626 , 3.050 , 3.402 , 3.990 , 4.489 , 4.926 ],   # R=4
-              [1.000, 1.0804, 1.2100, 1.371 , 1.549 , 1.735 , 1.893 , 2.151 , 2.544 , 2.920 , 3.231 , 3.749 , 4.183 , 4.565 ],   # R=5
-              [1.000, 1.0803, 1.208 , 1.362 , 1.523 , 1.677 , 1.798 , 1.98  , 2.22  , 2.442 , 2.622 , 2.919 , 3.166 , 3.384 ],   # R=10
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.319 , 2.455 , 2.576 ],   # R=20
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.082 , 2.177 , 2.262 ],   # R=30
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.082 , 2.025 , 2.092 ],   # R=40
-              [1.000, 1.0803, 1.198 , 1.327 , 1.439 , 1.523 , 1.576 , 1.638 , 1.703 , 1.756 , 1.798 , 1.868 , 1.929 , 1.983 ],   # R=50
-              [1.000, 1.0803, 1.194 , 1.314 , 1.409 , 1.478 , 1.518 , 1.561 , 1.599 , 1.628 , 1.650 , 1.686 , 1.719 , 1.747 ]]   # R=100
-
-    else:
-        raise ValueError('Geometry {} not supported'.format(geometry))
-
-    f = interp2d(Vs, Rs, Is, kind=kind)
-    return lambda R, V: float(f(V, R))
