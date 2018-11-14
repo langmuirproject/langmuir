@@ -359,7 +359,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    return I
+    return I[0] if len(I)==1 else I
 
 def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False):
 
@@ -420,7 +420,7 @@ def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-da
     if any(np.isnan(I)):
         logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
 
-    return I
+    return I[0] if len(I) == 1 else I
 
 # def current(geometry, species, V):
 
