@@ -142,9 +142,9 @@ class Species(object):
         if self.dist == 'kappa-cairns':
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
-            self.debye = np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *\
-                         np.sqrt( ((self.kappa - 1.5) / (self.kappa - 0.5)) *\
-                                  ( (1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
+            self.debye=np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *
+                np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *
+                        ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
 
     def __repr__(self):
 
@@ -288,6 +288,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     I = np.zeros_like(eta)
 
+    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine eps
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
