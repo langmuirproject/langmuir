@@ -137,7 +137,7 @@ class Species(object):
         if self.dist == 'cairns':
             self.alpha = kwargs['alpha']
             self.kappa = float('inf')
-            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((1.0 + 15.0*self.alpha)/((1.0 + 3.0*self.alpha))
+            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((1.0 + 15.0*self.alpha)/(1.0 + 3.0*self.alpha))
 
         if self.dist == 'kappa-cairns':
             self.alpha = kwargs['alpha']
