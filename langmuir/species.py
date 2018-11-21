@@ -160,3 +160,8 @@ class Species(object):
         s += ")"
 
         return s
+
+def debye(species):
+    if not isinstance(species, list):
+        species = [species]
+    return sum([s.debye**(-2) for s in species])**(-0.5)
