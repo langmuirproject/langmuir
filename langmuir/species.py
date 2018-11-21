@@ -116,6 +116,8 @@ class Species(object):
             self.T = kwargs['T']
 
         self.vth = np.sqrt(k*self.T/self.m)
+        self.eV  = self.T*k/e
+        self.omega_p = np.sqrt(self.q**2*self.n/(eps0*self.m))
 
         if self.dist == 'maxwellian':
             self.alpha = 0
@@ -138,6 +140,12 @@ class Species(object):
             self.debye = np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *\
                          np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *\
                         ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
+
+    def omega_c(B):
+        return np.abs(B*self.q/self.m)
+
+    def larmor(B):
+        return self.vth/self.omega_c(B)
 
     def __repr__(self):
 

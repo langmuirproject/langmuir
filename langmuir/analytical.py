@@ -171,10 +171,10 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         r = geometry.r
 
         # repelled particles:
-        if species.dist == 'maxwellian' or species.dist == 'cairns':
+        if species.kappa == float('inf'):
             I[indices_n] = I0 * C * D * np.exp(-eta[indices_n]) * (1. + E * eta[indices_n] * (eta[indices_n] + 4.))
 
-        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+        else:
             I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
@@ -186,23 +186,23 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         r, l = geometry.r, geometry.l
 
         # repelled particles:
-        if species.dist == 'maxwellian' or species.dist == 'cairns':
+        if species.kappa == float('inf'):
             I[indices_n] = I0 * C * D * \
                 np.exp(-eta[indices_n]) * (1. + E *
                                            eta[indices_n] * (eta[indices_n] + 4.))
 
-        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+        else:
             I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
         # attracted particles:
         eta[indices_p] = np.abs(eta[indices_p])
-        if species.dist == 'maxwellian' or species.dist == 'cairns':
+        if species.kappa == float('inf'):
             I[indices_p] = I0 * C * D * \
                            ((2. / np.sqrt(np.pi)) * ( 1 - 0.5 * E * eta[indices_p]) * np.sqrt(eta[indices_p]) + \
                            np.exp(eta[indices_p]) * (1. + E * eta[indices_p] * (eta[indices_p] - 4.)) * erfc(np.sqrt(eta[indices_p])))
 
-        elif species.dist == 'kappa' or species.dist == 'kappa-cairns':
+        else:
             C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
             D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
                 (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))

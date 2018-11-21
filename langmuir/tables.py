@@ -4,10 +4,28 @@ from langmuir.species import *
 from langmuir.geometry import *
 from langmuir.analytical import *
 
-tol = 1e-6 # For float comparisons
-
 # https://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
 def cartesian_product(*arrays):
+    """
+    Takes the cartesian product of multiple numpy arrays. Example::
+
+        >>> a = np.array([100,200])
+        >>> b = np.array([10,20])
+        >>> c = np.array([1,2,3])
+        >>> cartesian_product(a, b, c)
+        array([[100,  10,   1],
+               [100,  10,   2],
+               [100,  10,   3],
+               [100,  20,   1],
+               [100,  20,   2],
+               [100,  20,   3],
+               [200,  10,   1],
+               [200,  10,   2],
+               [200,  10,   3],
+               [200,  20,   1],
+               [200,  20,   2],
+               [200,  20,   3]])
+    """
     la = len(arrays)
     dtype = np.result_type(*arrays)
     arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
@@ -15,9 +33,77 @@ def cartesian_product(*arrays):
         arr[...,i] = a
     return arr.reshape(-1, la)
 
+def get_coords_and_value(table, *indices):
+    """
+    Return the coordinates and value corresponding to a set of indices in a
+    table. Example::
+
+        >>> t = get_table('laframboise sphere')
+        >>> get_coords_and_value(t, 4, 3)
+        ([1.0, -0.6], 1.595)
+    """
+    coords = [a[i] for a,i in zip(table['axes'], indices)]
+    return coords, table['values'][indices]
+
 def get_table(name, provide_points=True):
+    """
+    Returns tabulated normalized attracted-species currents for finite radii
+    spherical or cylindrical probes. If you do not need the raw tables,
+    consider using the higher level function finite_radius_current() instead.
+
+    The following tables exists:
+
+        - laframboise sphere
+        - laframboise cylinder
+        - darian-marholm uncomplete sphere
+        - darian-marholm uncomplete cylinder
+        - darian-marholm sphere
+        - darian-marholm cylinder
+        - laframboise-darian-marholm sphere
+        - laframboise-darian-marholm cylinder
+
+    The Laframboise tables are tables 5c and 6c in Laframboise's thesis.
+    These only cover Maxwellian velocity distributions. The Darian-Marholm
+    tables cover Kappa-Cairns (and subtype) distributions, although it is
+    not as accurate and with as wide input domain for Maxwellian as Laframboise.
+    The uncomplete version of Darian-Marholm tables are the ones presented in
+    the Darian-Marholm paper, whereas the completed version is the same but
+    with analytical values inserted for zero radius (OML theory) which are
+    not covered by the uncomplete version, and analytical thermal currents for
+    zero potential since these are not as accurate as the other currents in
+    the uncomplete Darian-Marholm paper. The Laframboise-Darian-Marholm tables
+    are the same as the complete Darian-Marholm tables except that the
+    Maxwellian values are replaced by those of Laframboise, which are more
+    accurate. These composed tables therefore offer the greatest accuracy and
+    range for any case. Since the Laframboise case has a larger grid, the
+    grid is no longer regular for the Laframboise-Darian-Marholm tables.
+
+    The returned dictionary ``table`` has the following keys::
+
+        - ``table['axes']`` is a tuple of lists, each list containing the
+          grid values along that axis. The axes are, in this order, 1/kappa,
+          alpha, R, eta, where kappa and alpha are the spectral indices of
+          the Kappa-Cairns distribution, R is the probe length in terms of
+          Debye lengths, and eta is the normalized voltage qV/kT. For
+          the Laframboise tables the first to axes do not exist.
+
+        - ``table['values']`` is a 4D array (2D for Laframboise) of values.
+          ``table['values'][i][j][k][l] is the value corresponding to
+          table['axes'][0][i], table['axes'][1][j], and so forth. For
+          non-regular grids (the Laframboise-Darian-Marholm tables) it is
+          flattened to 1D.
+
+        - ``table['points']`` is a flatted array of 4-tuples (2-tuples for
+          Laframboise tables), of 1/kappa, alpha, R, eta corresponding to
+          the values in a flattened array. For non-regular grids,
+          ``table['values']`` are already this flattened array, but in any
+          case, ``table['values'].reshape(-1)`` is always correct. This
+          is only provided when the grid is non-regular or when
+          ``provide_points==True``.
+    """
 
     name = name.lower()
+    tol = 1e-6 # For float comparisons
 
     if name == 'laframboise sphere':
 
@@ -354,7 +440,6 @@ def get_table(name, provide_points=True):
         # Add all values from laframboise 
         t = get_table('laframboise sphere')
         points = np.zeros((len(t['points']),4))
-        points[:,0] = inf # kappa
         points[:,2:] = t['points']
         values = t['values'].reshape(-1)
         table['points'] = np.concatenate((table['points'], points))
@@ -378,7 +463,6 @@ def get_table(name, provide_points=True):
         # Add all values from laframboise 
         t = get_table('laframboise cylinder')
         points = np.zeros((len(t['points']),4))
-        points[:,0] = inf # kappa
         points[:,2:] = t['points']
         values = t['values'].reshape(-1)
         table['points'] = np.concatenate((table['points'], points))
