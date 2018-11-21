@@ -10,7 +10,7 @@ Langmuir
 .. image:: https://img.shields.io/pypi/pyversions/langmuir.svg
     :target: https://pypi.org/project/langmuir
 
-Functions for work on Langmuir probe theory
+Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes
 
 Installation
 ------------
@@ -77,3 +77,15 @@ you must multiply by the probe length::
     >> I = I0*l*f(R, eV_kT)
     >> print("{:.1f}uA".format(I*1e6))
     -711.0uA
+
+Basic Usage
+-----------
+
+Function Overview
+-----------------
+
+Example: Plotting normalized IV-characteristic
+----------------------------------------------
+
+Example: Finding unknown voltage
+--------------------------------

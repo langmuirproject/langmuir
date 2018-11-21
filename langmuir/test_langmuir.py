@@ -42,14 +42,6 @@ from pytest import approx
 import pytest
 import numpy as np
 
-# def test_lafr_attr_current_geometry():
-#     with pytest.raises(ValueError) as e_info:
-#         f = lafr_attr_current('Pentagon')
-# 
-# def test_lafr_norm_current_geometry():
-#     with pytest.raises(ValueError) as e_info:
-#         f = lafr_norm_current('Pentagon', 1, 1e11, 1e3)
-
 def test_species_defaults():
     T = 1000
     n = 1e11

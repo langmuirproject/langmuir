@@ -25,6 +25,7 @@ from langmuir.tables import *
 from scipy.interpolate import griddata
 from scipy.constants import value as constants
 from scipy.special import gamma, erfc, hyp2f1
+from copy import deepcopy
 
 logger = logging.getLogger('langmuir')
 logging.basicConfig()
@@ -286,6 +287,8 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     else:
         eta = make_array(eta)
 
+    eta = deepcopy(eta) # Prevents this function from changing eta in caller
+
     I = np.zeros_like(eta)
 
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
@@ -360,7 +363,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     return I
 
-def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False):
+def finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False, flip_kappa=False):
 
     if isinstance(species, list):
         if normalize == True:
@@ -384,6 +387,8 @@ def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-da
     else:
         eta = make_array(eta)
 
+    eta = deepcopy(eta)
+
     I = np.zeros_like(eta)
 
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
@@ -402,11 +407,22 @@ def tabulated_current(geometry, species, V=None, eta=None, table='laframboise-da
         table += ' cylinder'
 
     if "darian-marholm" in table:
-        table = get_table(table)
-        I[indices_p] = I0*griddata(table['points'], table['values'], (R, -eta[indices_p], kappa, alpha))
+        table = get_table(table, flip_kappa=flip_kappa)
+        pts = table['points']
+        vals = table['values'].reshape(-1)
+        if flip_kappa:
+            kappa = 1/kappa
+        else:
+            kappa = np.min([kappa, 1000])
+        print(kappa, alpha, R, eta, -eta[indices_p])
+        I[indices_p] = I0*griddata(pts, vals, (kappa, alpha, R, -eta[indices_p]))
+        print(I)
+
     else:
         table = get_table(table)
-        I[indices_p] = I0*griddata(table['points'], table['values'], (R, -eta[indices_p]))
+        pts = table['points']
+        vals = table['values'].reshape(-1)
+        I[indices_p] = I0*griddata(pts, vals, (R, -eta[indices_p]))
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
 

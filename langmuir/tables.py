@@ -1,10 +1,19 @@
 import numpy as np
 from scipy.interpolate import griddata
 
-def cartesian_product(*arrays):
-    return np.dstack(np.meshgrid(*arrays)).reshape(-1, len(arrays))
+tol = 1e-6 # For float comparisons
+inf = 1000 # Value used as infinity for kappa
 
-def get_table(name, provide_points=True):
+# https://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
+def cartesian_product(*arrays):
+    la = len(arrays)
+    dtype = np.result_type(*arrays)
+    arr = np.empty([len(a) for a in arrays] + [la], dtype=dtype)
+    for i, a in enumerate(np.ix_(*arrays)):
+        arr[...,i] = a
+    return arr.reshape(-1, la)
+
+def get_table(name, provide_points=True, flip_kappa=False):
 
     name = name.lower()
 
@@ -32,7 +41,7 @@ def get_table(name, provide_points=True):
 
         Rs = np.array(Rs)
         Vs = np.array(Vs)
-        Is = np.array(Is).T.reshape(-1)
+        Is = np.array(Is)
 
         table = {'axes': (Rs, Vs), 'values': Is}
 
@@ -66,33 +75,268 @@ def get_table(name, provide_points=True):
 
     elif name == 'darian-marholm sphere':
 
-        raise NotImplementedError
-        # Results from paper. Table with four axes: R, V (eta), kappa, alpha.
+        Rs = [0.2, 1.0, 2.0, 3.0, 5.0, 10.0]
+        Vs = [0, 1, 2, 3, 5, 10, 15, 20, 25]
+        kappas = [4, 6, inf]
+        if flip_kappa:
+            kappas = [1/4, 1/6, 0]
+        alphas = [0, 0.2]
+        Is = [[
+
+            # kappa=4.0
+            # alpha=0.0
+
+            [[ 0.921,  0.922,  0.930,  0.934,  0.940, 0.940],
+             [ 2.067,  2.050,  1.990,  1.951,  1.823, 1.729],
+             [ 3.288,  3.127,  2.958,  2.783,  2.502, 2.189],
+             [ 4.435,  4.165,  3.840,  3.509,  3.069, 2.556],
+             [ 6.726,  6.163,  5.441,  4.877,  3.963, 3.149],
+             [12.408, 10.891,  9.050,  7.675,  5.989, 4.199],
+             [18.143, 15.408, 12.237, 10.206,  7.628, 5.098],
+             [23.866, 19.660, 15.297, 12.484,  8.982, 5.769],
+             [29.487, 23.781, 18.182, 14.588, 10.406, 6.515]]
+
+            ,
+
+            # kappa=4.0
+            # alpha=0.2
+
+            [[ 2.399,  2.322,  2.344,  2.328, 2.397, 2.352],
+             [ 2.867,  2.818,  2.846,  2.825, 2.804, 2.766],
+             [ 3.330,  3.329,  3.308,  3.273, 3.254, 3.157],
+             [ 3.858,  3.816,  3.753,  3.704, 3.555, 3.497],
+             [ 4.903,  4.787,  4.649,  4.535, 4.255, 4.054],
+             [ 7.420,  7.115,  6.593,  6.352, 5.727, 5.146],
+             [10.150,  9.375,  8.592,  8.009, 7.026, 6.038],
+             [12.619, 11.533, 10.400,  9.499, 8.223, 6.782],
+             [15.165, 13.686, 12.074, 10.986, 9.245, 7.427]]
+
+            ],[
+
+            # kappa=6.0
+            # alpha=0.0
+
+            [[ 0.960,  0.946,  0.952,  0.965,  0.968, 0.969],
+             [ 2.027,  2.016,  1.982,  1.927,  1.829, 1.744],
+             [ 3.147,  3.043,  2.910,  2.758,  2.492, 2.238],
+             [ 4.189,  4.032,  3.745,  3.457,  3.061, 2.551],
+             [ 6.381,  5.965,  5.348,  4.773,  3.974, 3.132],
+             [11.858, 10.506,  8.798,  7.541,  5.863, 4.175],
+             [17.293, 14.840, 11.990,  9.935,  7.297, 4.989],
+             [22.569, 18.968, 14.941, 12.084,  8.837, 5.642],
+             [28.061, 22.968, 17.595, 14.172, 10.146, 6.414]]
+
+            ,
+
+            # kappa=6.0
+            # alpha=0.2
+
+            [[ 1.757,  1.769,  1.787,  1.778, 1.821, 1.794],
+             [ 2.372,  2.359,  2.369,  2.333, 2.330, 2.281],
+             [ 2.990,  2.917,  2.918,  2.864, 2.770, 2.718],
+             [ 3.613,  3.486,  3.435,  3.390, 3.261, 3.094],
+             [ 4.687,  4.568,  4.479,  4.288, 4.051, 3.701],
+             [ 7.659,  7.297,  6.750,  6.346, 5.647, 4.773],
+             [10.475,  9.871,  8.996,  8.255, 6.940, 5.541],
+             [13.511, 12.433, 11.031,  9.881, 8.139, 6.301],
+             [16.399, 14.965, 12.972, 11.532, 9.218, 6.796]]
+
+            ],[
+
+            # kappa=inf
+            # alpha=0.0
+
+            [[ 0.965,  0.972,  0.982,  0.983, 1.008, 0.992],
+             [ 2.019,  1.950,  1.958,  1.916, 1.851, 1.749],
+             [ 3.021,  2.918,  2.813,  2.692, 2.492, 2.244],
+             [ 4.042,  3.828,  3.618,  3.440, 3.059, 2.583],
+             [ 5.964,  5.667,  5.109,  4.658, 3.949, 3.110],
+             [10.961,  9.956,  8.454,  7.283, 5.703, 4.086],
+             [15.937, 13.982, 11.432,  9.720, 7.121, 4.870],
+             [21.155, 17.886, 14.380, 11.743, 8.605, 5.507],
+             [26.083, 21.704, 17.040, 13.822, 9.660, 6.076]]
+
+            ,
+
+            # kappa=inf
+            # alpha=0.2
+
+            [[ 1.461,  1.398,  1.423,  1.416, 1.453, 1.445],
+             [ 2.150,  2.062,  2.069,  2.063, 2.073, 2.034],
+             [ 2.759,  2.709,  2.690,  2.657, 2.614, 2.520],
+             [ 3.418,  3.362,  3.325,  3.233, 3.106, 2.883],
+             [ 4.678,  4.600,  4.443,  4.259, 3.920, 3.425],
+             [ 7.919,  7.605,  7.015,  6.490, 5.439, 4.316],
+             [11.318, 10.467,  9.434,  8.355, 6.852, 4.941],
+             [14.467, 13.403, 11.637, 10.058, 7.780, 5.577],
+             [17.535, 16.176, 13.781, 11.663, 8.924, 6.106]]
+
+            ]]
+
+        Rs = np.array(Rs)
+        Vs = np.array(Vs)
+        kappas = np.array(kappas)
+        alphas = np.array(alphas)
+        Is = np.array(Is)
+        Is = np.transpose(Is, (0,1,3,2))
+
+        table = {'axes': (kappas, alphas, Rs, Vs), 'values': Is}
 
     elif name == 'darian-marholm cylinder':
 
-        raise NotImplementedError
-        # Results from paper. Table with four axes: R, V (eta), kappa, alpha.
+        Rs = [1.0, 2.0, 3.0, 5.0, 10.0]
+        Vs = [0, 1, 2, 3, 5, 10, 15, 20, 25]
+        kappas = [4, 6, inf]
+        alphas = [0, 0.2]
+        Is = [[
+
+            # kappa=4.0
+            # alpha=0.0
+
+            [[0.934, 0.927, 0.925, 0.920, 0.911],
+             [1.538, 1.521, 1.510, 1.514, 1.433],
+             [1.938, 1.910, 1.915, 1.865, 1.756],
+             [2.248, 2.222, 2.164, 2.139, 1.958],
+             [2.773, 2.755, 2.674, 2.584, 2.188],
+             [3.736, 3.657, 3.551, 3.235, 2.742],
+             [4.518, 4.348, 4.295, 3.788, 2.971],
+             [5.145, 4.890, 4.709, 4.202, 3.326],
+             [5.645, 5.356, 5.347, 4.630, 3.547]]
+
+            ,
+
+            # kappa=4.0
+            # alpha=0.2
+
+            [[2.219, 2.217, 2.198, 2.198, 2.159],
+             [2.559, 2.530, 2.547, 2.551, 2.495],
+             [2.849, 2.809, 2.810, 2.841, 2.800],
+             [3.113, 3.059, 3.043, 3.074, 2.986],
+             [3.567, 3.509, 3.465, 3.490, 3.351],
+             [4.379, 4.347, 4.341, 4.264, 3.948],
+             [5.082, 5.033, 4.976, 4.866, 4.454],
+             [5.692, 5.614, 5.530, 5.359, 4.894],
+             [6.219, 6.185, 6.006, 5.848, 5.174]]
+
+            ],[
+
+            # kappa=6.0
+            # alpha=0.0
+
+            [[0.946, 0.935, 0.934, 0.944, 0.931],
+             [1.540, 1.540, 1.509, 1.541, 1.486],
+             [1.937, 1.938, 1.889, 1.849, 1.748],
+             [2.257, 2.241, 2.213, 2.145, 1.958],
+             [2.790, 2.758, 2.723, 2.568, 2.131],
+             [3.770, 3.691, 3.552, 3.239, 2.640],
+             [4.460, 4.338, 4.098, 3.813, 2.932],
+             [5.115, 4.975, 4.815, 4.276, 3.232],
+             [5.692, 5.350, 5.213, 4.635, 3.525]]
+
+            ,
+
+            # kappa=6.0
+            # alpha=0.2
+
+            [[1.827, 1.804, 1.797, 1.825, 1.797],
+             [2.209, 2.190, 2.165, 2.185, 2.154],
+             [2.541, 2.504, 2.503, 2.503, 2.430],
+             [2.791, 2.768, 2.751, 2.791, 2.730],
+             [3.242, 3.251, 3.203, 3.208, 3.082],
+             [4.153, 4.132, 4.058, 4.033, 3.682],
+             [4.880, 4.844, 4.772, 4.540, 4.175],
+             [5.483, 5.440, 5.332, 5.202, 4.327],
+             [6.050, 5.961, 5.875, 5.523, 4.753]]
+
+            ],[
+
+            # kappa=inf
+            # alpha=0.0
+
+            [[0.974, 0.962, 0.956, 0.957, 0.940],
+             [1.553, 1.543, 1.538, 1.545, 1.483],
+             [1.945, 1.937, 1.920, 1.895, 1.788],
+             [2.269, 2.257, 2.231, 2.176, 1.957],
+             [2.800, 2.717, 2.729, 2.566, 2.226],
+             [3.764, 3.682, 3.581, 3.254, 2.661],
+             [4.562, 4.374, 4.207, 3.807, 2.922],
+             [5.163, 4.978, 4.831, 4.251, 3.132],
+             [5.688, 5.492, 5.207, 4.520, 3.325]]
+
+            ,
+
+            # kappa=inf
+            # alpha=0.2
+
+            [[1.496, 1.488, 1.482, 1.483, 1.471],
+             [1.944, 1.931, 1.914, 1.923, 1.896],
+             [2.263, 2.275, 2.290, 2.278, 2.248],
+             [2.575, 2.551, 2.595, 2.555, 2.509],
+             [3.044, 3.031, 3.060, 2.991, 2.812],
+             [3.989, 3.987, 3.994, 3.765, 3.346],
+             [4.750, 4.713, 4.734, 4.261, 3.585],
+             [5.367, 5.346, 5.308, 4.759, 3.748],
+             [5.937, 5.897, 5.684, 5.134, 4.083]]
+
+            ]]
+
+        Rs = np.array(Rs)
+        Vs = np.array(Vs)
+        kappas = np.array(kappas)
+        alphas = np.array(alphas)
+        Is = np.array(Is)
+        Is = np.transpose(Is, (0,1,3,2))
+
+        table = {'axes': (kappas, alphas, Rs, Vs), 'values': Is}
+
 
     elif name == 'laframboise-darian-marholm sphere':
 
-        raise NotImplementedError
-        # Same as darian-marholm but with the values for the pure Maxwellian
-        # distribution removed and replaced by those of Laframboise, for the
-        # best accuracy. Since his table contains more data points the values
-        # will not be on a uniform grid in 4D space, and the dictionary can
-        # not have the 'axes' entry. Provide the 'points' entry instead.
-        # Do not duplicate values, but obtain them from the other tables.
+        # Get darian-marholm table
+        table = get_table('darian-marholm sphere')
+
+        # Grid will no longer be regular.
+        table['values'] = table['values'].reshape(-1)
+        del table['axes']
+
+        # Remove points with kappa=inf and alpha=0
+        keep = map(lambda x: abs(x[0]-inf)>tol or abs(x[1]-0)>tol, table['points'])
+        keep = np.where(list(keep))
+        table['points'] = table['points'][keep]
+        table['values'] = table['values'][keep]
+
+        # Add all values from laframboise 
+        t = get_table('laframboise sphere')
+        points = np.zeros((len(t['points']),4))
+        points[:,0] = inf # kappa
+        points[:,2:] = t['points']
+        values = t['values'].reshape(-1)
+        table['points'] = np.concatenate((table['points'], points))
+        table['values'] = np.concatenate((table['values'], values))
 
     elif name == 'laframboise-darian-marholm cylinder':
 
-        raise NotImplementedError
-        # Same as darian-marholm but with the values for the pure Maxwellian
-        # distribution removed and replaced by those of Laframboise, for the
-        # best accuracy. Since his table contains more data points the values
-        # will not be on a uniform grid in 4D space, and the dictionary can
-        # not have the 'axes' entry. Provide the 'points' entry instead.
-        # Do not duplicate values, but obtain them from the other tables.
+        # Get darian-marholm table
+        table = get_table('darian-marholm cylinder')
+
+        # Grid will no longer be regular.
+        table['values'] = table['values'].reshape(-1)
+        del table['axes']
+
+        # Remove points with kappa=inf and alpha=0
+        keep = map(lambda x: abs(x[0]-inf)>tol or abs(x[1]-0)>tol, table['points'])
+        keep = np.where(list(keep))
+        table['points'] = table['points'][keep]
+        table['values'] = table['values'][keep]
+
+        # Add all values from laframboise 
+        t = get_table('laframboise cylinder')
+        points = np.zeros((len(t['points']),4))
+        points[:,0] = inf # kappa
+        points[:,2:] = t['points']
+        values = t['values'].reshape(-1)
+        table['points'] = np.concatenate((table['points'], points))
+        table['values'] = np.concatenate((table['values'], values))
 
     else:
 
