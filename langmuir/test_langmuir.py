@@ -183,7 +183,6 @@ def test_OML_current_not_normalized_by_default():
     I2 = OML_current(geometry, species, 5, normalize=False)
     assert(I1 == approx(I2))
 
-
 def test_Debye_length():
     sp_m = Species(n=1e11, T=1000)
     sp_k = Species('kappa', n=1e11, T=1000, kappa=4)
