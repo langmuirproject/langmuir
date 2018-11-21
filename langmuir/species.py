@@ -118,6 +118,8 @@ class Species(object):
         self.vth = np.sqrt(k*self.T/self.m)
         self.eV  = self.T*k/e
         self.omega_p = np.sqrt(self.q**2*self.n/(eps0*self.m))
+        self.freq_p = self.omega_p/(2*np.pi)
+        self.period_p = 1/self.freq_p
 
         if self.dist == 'maxwellian':
             self.alpha = 0
@@ -141,10 +143,28 @@ class Species(object):
                          np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *\
                         ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
 
-    def omega_c(B):
+    def omega_c(self, B):
+        """
+        Returns the angular cyclotron frequency of the species for a given B-field
+        """
         return np.abs(B*self.q/self.m)
 
-    def larmor(B):
+    def freq_c(self, B):
+        """
+        Returns the cyclotron frequency of the species for a given B-field
+        """
+        return self.omega_c(B)/(2*np.pi)
+
+    def period_c(self, B):
+        """
+        Returns the cyclotron period of the species for a given B-field
+        """
+        return 1/self.freq_c(B)
+
+    def larmor(self, B):
+        """
+        Returns the Larmor radius of the species for a given B-field
+        """
         return self.vth/self.omega_c(B)
 
     def __repr__(self):
@@ -162,6 +182,11 @@ class Species(object):
         return s
 
 def debye(species):
+    """
+    Get the total Debye length of a species or a plasma (represented as a list
+    of species). If species is a list this includes the Debye length due to
+    all species.
+    """
     if not isinstance(species, list):
         species = [species]
     return sum([s.debye**(-2) for s in species])**(-0.5)
