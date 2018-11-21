@@ -144,8 +144,8 @@ class Species(object):
             self.alpha = kwargs['alpha']
             self.kappa = kwargs['kappa']
             self.debye = np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *\
-                         np.sqrt( ((self.kappa - 1.5) / (self.kappa - 0.5)) *\
-                                  ( (1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
+                         np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *\
+                        ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
 
     def __repr__(self):
 
@@ -241,8 +241,29 @@ def thermal_current(geometry, species):
         for s in species:
             I += thermal_current(geometry, s)
         return I
+    else:
+        kappa, alpha = species.kappa, species.alpha
+        I0 = normalization_current(geometry, species)
+        if isinstance(geometry, Sphere):
+            if kappa == float('inf'):
+                C = 1.0
+                D = (1.+24*alpha)/(1.+15*alpha)
+            else:
+                C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
+                D = (1.+24*alpha*((kappa-1.5)**2/((kappa-2.)*(kappa-3.))))/(1.+15*alpha*((kappa-1.5)/(kappa-2.5)))
+        elif isinstance(geometry, Cylinder):
+            I0 *= 2.0/np.sqrt(np.pi)
+            if kappa == float('inf'):
+                C = 1.0
+                D = (1.+3.*alpha)/(1.+15.*alpha)
+            else:
+                C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
+                D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
+                    (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
+        else:
+            raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    raise NotImplementedError
+        return I0*C*D  
 
 def make_array(arr):
     if isinstance(arr, (int, float)):
@@ -291,6 +312,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     I = np.zeros_like(eta)
 
+    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine eps
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
@@ -361,7 +383,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    return I
+    return I[0] if len(I)==1 else I
 
 def finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False, flip_kappa=False):
 
@@ -435,7 +457,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
     if any(np.isnan(I)):
         logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
 
-    return I
+    return I[0] if len(I) == 1 else I
 
 # def current(geometry, species, V):
 

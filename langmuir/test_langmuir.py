@@ -182,3 +182,14 @@ def test_OML_current_not_normalized_by_default():
     I1 = OML_current(geometry, species, 5)
     I2 = OML_current(geometry, species, 5, normalize=False)
     assert(I1 == approx(I2))
+
+
+def test_Debye_length():
+    sp_m = Species(n=1e11, T=1000)
+    sp_k = Species('kappa', n=1e11, T=1000, kappa=4)
+    sp_a = Species('cairns', n=1e11, T=1000, alpha=0.2)
+    sp_ka = Species('kappa-cairns', n=1e11, T=1000, kappa=4, alpha=0.2)
+    assert(sp_m.debye == approx(6.900896931e-03))
+    assert(sp_k.debye == approx(0.0058323223992018209))
+    assert(sp_a.debye == approx(0.010911276093510305))
+    assert(sp_ka.debye == approx(0.011952704095164884))
