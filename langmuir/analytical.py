@@ -94,7 +94,6 @@ def thermal_current(geometry, species, normalize=False):
             C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
             D = (1.+24*alpha*((kappa-1.5)**2/((kappa-2.)*(kappa-3.))))/(1.+15*alpha*((kappa-1.5)/(kappa-2.5)))
     elif isinstance(geometry, Cylinder):
-        I0 *= 2.0/np.sqrt(np.pi)
         if kappa == float('inf'):
             C = 1.0
             D = (1.+3.*alpha)/(1.+15.*alpha)
