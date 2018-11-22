@@ -404,7 +404,6 @@ def get_table(name, provide_points=True):
         kappa_recips, alphas, Rs, etas = table['axes']
 
         # Add R=0 column
-        print(Rs)
         Rs = np.concatenate([[0], Rs])
         vals = np.zeros((len(kappa_recips), len(alphas), len(Rs), len(etas)))
         vals[:,:,1:,:] = table['values']

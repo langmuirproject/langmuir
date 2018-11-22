@@ -21,6 +21,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 
 from langmuir import *
 from pytest import approx
+import pytest
 
 # I generally try to test one point in each table, with unequal row/column
 # indices and where nearby elements differ from the one I test.
@@ -81,3 +82,33 @@ def test_darian_marholm_cylinder():
     # Fails due to error in thermal_current()
     assert(get_coords_and_value(t, 0, 0, 1, 0) == ([0, 0, 1.0, 0], 1.0))
     assert(get_coords_and_value(t, 0, 0, 0, 3) == ([0, 0, 0.0, -3], approx(2.2417, rel=1e-3)))
+
+def test_laframboise_darian_marholm_sphere():
+    t = get_table('laframboise-darian-marholm sphere')
+
+    # Testing one from each of Darian-Marholm and Laframboise
+
+    index = map(all, t['points'] == [0.25, 0.2, 3, -5])
+    index = np.where(list(index))
+    assert(t['values'][index] == approx(4.535))
+
+    index = map(all, t['points'] == [0, 0, 3, -5])
+    index = np.where(list(index))
+    assert(t['values'][index] == approx(4.640))
+
+def test_laframboise_darian_marholm_cylinder():
+    t = get_table('laframboise-darian-marholm cylinder')
+
+    # Testing one from each of Darian-Marholm and Laframboise
+
+    index = map(all, t['points'] == [0.25, 0.2, 3, -5])
+    index = np.where(list(index))
+    assert(t['values'][index] == approx(3.465))
+
+    index = map(all, t['points'] == [0, 0, 3, -5])
+    index = np.where(list(index))
+    assert(t['values'][index] == approx(2.701))
+
+def test_invalid_table():
+    with pytest.raises(ValueError):
+        t = get_table('bullshit')
