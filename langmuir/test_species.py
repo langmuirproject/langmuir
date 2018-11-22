@@ -32,12 +32,13 @@ def test_species_defaults():
     m = constants('electron mass')
     k = constants('Boltzmann constant')
     s = Species(n=n, T=T)
-    assert(s.dist == 'maxwellian')
     assert(s.m == approx(m))
     assert(s.q == approx(-e))
     assert(s.n == approx(n))
     assert(s.T == approx(T))
     assert(s.vth == approx(np.sqrt(k*1000/m)))
+    assert(s.alpha == 0)
+    assert(s.kappa == float('inf'))
 
 def test_species_electron():
     s = Species('electron', n=1e11, T=1000)
@@ -55,26 +56,22 @@ def test_species_positron():
     assert(s.q == approx(constants('elementary charge')))
 
 def test_species_maxwellian():
-    s = Species('maxwellian', n=1e11, T=1000)
-    assert(s.dist == 'maxwellian')
+    s = Species(n=1e11, T=1000)
     assert(s.kappa == float('inf'))
     assert(s.alpha == approx(0))
 
 def test_species_kappa():
-    s = Species('kappa', n=1e11, T=1000, kappa=4)
-    assert(s.dist == 'kappa')
+    s = Species(n=1e11, T=1000, kappa=4)
     assert(s.kappa == approx(4))
     assert(s.alpha == approx(0))
 
 def test_species_cairns():
-    s = Species('cairns', n=1e11, T=1000, alpha=0.2)
-    assert(s.dist == 'cairns')
+    s = Species(n=1e11, T=1000, alpha=0.2)
     assert(s.kappa == float('inf'))
     assert(s.alpha == approx(0.2))
 
 def test_species_kappa_cairns():
-    s = Species('kappa-cairns', n=1e11, T=1000, kappa=4, alpha=0.2)
-    assert(s.dist == 'kappa-cairns')
+    s = Species(n=1e11, T=1000, kappa=4, alpha=0.2)
     assert(s.kappa == approx(4))
     assert(s.alpha == approx(0.2))
 
@@ -116,7 +113,6 @@ def test_species_repr():
     assert(s2.T == approx(s.T))
     assert(s2.kappa == approx(s.kappa))
     assert(s2.alpha == approx(s.alpha))
-    assert(s2.dist == s.dist)
 
 def test_species_convenience_values():
     s = Species(n=1e11, T=1000)

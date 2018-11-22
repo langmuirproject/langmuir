@@ -25,21 +25,22 @@ import numpy as np
 class Species(object):
     """
     Defines a species using a set of flags and keyword parameters. Maxwellian
-    electrons are the default but other distributions can be specified using a
-    flag, e.g. 'kappa'. Other parameters can be specified/overridden using the
-    keyword parameters. Examples::
+    electrons are the default but Kappa, Cairns, and Kappa-Cairns distributions
+    can be specified by setting the spectral indices kappa and alpha. Other
+    parameters can be specified/overridden using the keyword parameters.
+    Examples::
 
         >>> # Maxwellian electrons with density 1e11 m^(-3) and 1000 K
         >>> species = Species(n=1e11, T=1000)
 
         >>> # Kappa-distributed electrons with kappa=2
-        >>> species = Species('kappa', n=1e11, T=1000, kappa=2)
+        >>> species = Species(n=1e11, T=1000, kappa=2)
 
         >>> # Doubly charged Maxwellain Oxygen ions with 0.26 eV
         >>> species = Species(Z=2, amu=16, n=1e11, eV=0.26)
 
-        >>> # Cairns-distributed protons with alpha=0.2
-        >>> species = Species('cairns', 'proton', n=1e11, T=1000, alpha=0.2)
+        >>> # Kappa-Cairns-distributed protons with kappa = 5 and alpha=0.2
+        >>> species = Species('proton', n=1e11, T=1000, kappa=5, alpha=0.2)
 
     A plasma is fully specified by a list of species. E.g. for a Maxwellian
     electron-proton plasma::
@@ -50,10 +51,6 @@ class Species(object):
 
     Flags:
     ------
-    'maxwellian'   : Maxwellian distribution (default)
-    'kappa'        : Kappa distribution
-    'cairns'       : Cairns distribution
-    'kappa-cairns' : Kappa-Cairns distribution
     'electron'     : Elecron species (default)
     'proton'       : Proton species
     'positron'     : Positron species
@@ -68,8 +65,8 @@ class Species(object):
     T     : temperature [K]
     eV    : temperature [eV]
     vth   : thermal velocity [m/s]
-    kappa : spectral index kappa (for Kappa and Kappa-Cairns distributions)
-    alpha : spectral index alpha (for Cairns and Kappa-Cairns distributions)
+    kappa : spectral index kappa for Kappa and Kappa-Cairns distribution
+    alpha : spectral index alpha for Cairns and Kappa-Cairns distribution
     """
 
     def __init__(self, *args, **kwargs):
@@ -80,9 +77,6 @@ class Species(object):
         k    = constants('Boltzmann constant')
         eps0 = constants('electric constant')
         amu  = constants('atomic mass constant')
-
-        self.dist = 'maxwellian'
-        valid_dists = ['maxwellian', 'kappa', 'cairns', 'kappa-cairns']
 
         if 'Z' in kwargs:
             self.q = kwargs['Z']*e
@@ -95,9 +89,6 @@ class Species(object):
             self.m = kwargs.pop('m', me)
 
         for arg in args:
-            if arg.lower() in valid_dists:
-                self.dist = arg.lower()
-
             if arg.lower()=='proton':
                 self.q = e
                 self.m = mp
@@ -121,24 +112,12 @@ class Species(object):
         self.freq_p = self.omega_p/(2*np.pi)
         self.period_p = 1/self.freq_p
 
-        if self.dist == 'maxwellian':
-            self.alpha = 0
-            self.kappa = float('inf')
-            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))
+        self.alpha = kwargs.pop('alpha', 0)
+        self.kappa = kwargs.pop('kappa', float('inf'))
 
-        if self.dist == 'kappa':
-            self.alpha = 0
-            self.kappa = kwargs['kappa']
-            self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((self.kappa-1.5)/(self.kappa-0.5))
-
-        if self.dist == 'cairns':
-            self.alpha = kwargs['alpha']
-            self.kappa = float('inf')
+        if self.kappa == float('inf'):
             self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((1.0 + 15.0*self.alpha)/(1.0 + 3.0*self.alpha))
-
-        if self.dist == 'kappa-cairns':
-            self.alpha = kwargs['alpha']
-            self.kappa = kwargs['kappa']
+        else:
             self.debye = np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *\
                          np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *\
                         ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))
@@ -169,12 +148,12 @@ class Species(object):
 
     def __repr__(self):
 
-        s = "Species('{}', q={}, m={}, n={}, T={}".format(self.dist, self.q, self.m, self.n, self.T)
+        s = "Species(q={}, m={}, n={}, T={}".format(self.q, self.m, self.n, self.T)
 
-        if(self.dist == 'kappa' or self.dist == 'kappa-cairns'):
+        if(self.kappa != float('inf')):
             s += ", kappa={}".format(self.kappa)
 
-        if(self.dist == 'cairns' or self.dist == 'kappa-cairns'):
+        if(self.alpha != 0):
             s += ", alpha={}".format(self.alpha)
 
         s += ")"
