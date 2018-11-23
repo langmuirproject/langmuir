@@ -19,6 +19,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __future__ import division
 from langmuir import *
 from scipy.constants import value as constants
 from pytest import approx

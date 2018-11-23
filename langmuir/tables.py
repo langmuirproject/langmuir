@@ -39,11 +39,13 @@ def get_coords_and_value(table, *indices):
     table. Example::
 
         >>> t = get_table('laframboise sphere')
-        >>> get_coords_and_value(t, 4, 3)
-        ([1.0, -0.6], 1.595)
+        >>> x = get_coords_and_value(t, 4, 3)
+        >>> np.allclose(x, [1, -0.6, 1.595])
+        True
     """
     coords = [a[i] for a,i in zip(table['axes'], indices)]
-    return coords, table['values'][indices]
+    coords.append(table['values'][indices])
+    return coords
 
 def get_table(name, provide_points=True):
     """
@@ -387,8 +389,9 @@ def get_table(name, provide_points=True):
 
         # Insert analytical results for R=0 and eta=0
         for i, kappa_recip in enumerate(kappa_recips):
+            kappa = 1/kappa_recip if kappa_recip != 0 else float('inf')
             for j, alpha in enumerate(alphas):
-                sp = Species(n=1e11, T=1000, kappa=1.0/kappa_recip, alpha=alpha)
+                sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
                 geo = Cylinder(1.0, 1)
                 vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalize=True)
                 for k, R in enumerate(Rs):

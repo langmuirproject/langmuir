@@ -21,30 +21,11 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
 from langmuir import *
-from pytest import approx
 
-def test_thermal_current_maxwellian_normalized():
-    sp = Species(n=1e11, T=1000)
-
-    geo = Cylinder(3*sp.debye, 1)
-    I = thermal_current(geo, sp, normalize=True)
-    assert(I == approx(1))
-
-    geo = Sphere(3*sp.debye)
-    I = thermal_current(geo, sp, normalize=True)
-    assert(I == approx(1))
-
-def test_thermal_OML_current_maxwellian_normalized():
-    sp = Species(n=1e11, T=1000)
-
-    geo = Cylinder(3*sp.debye, 1)
-    I = OML_current(geo, sp, eta=0, normalize=True)
-    assert(I == approx(1))
-
-    geo = Sphere(3*sp.debye)
-    I = OML_current(geo, sp, eta=0, normalize=True)
-    assert(I == approx(1))
-
-def test_OML_current_maxwellian():
-    I = OML_current(Cylinder(1e-3, 25e-3), Species(n=1e11, T=1000), 5)
-    assert(I == approx(-1.0714855994312037e-06))
+def test_make_array():
+    assert(isinstance(make_array(2), np.ndarray))
+    assert(isinstance(make_array((2,3)), np.ndarray))
+    assert(isinstance(make_array([2,3]), np.ndarray))
+    assert(np.allclose(2, make_array(  int(2))))
+    assert(np.allclose(2, make_array(float(2))))
+    assert(np.allclose([10, 1/10], make_array([10, 1/10])))
