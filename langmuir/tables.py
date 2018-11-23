@@ -388,7 +388,7 @@ def get_table(name, provide_points=True):
         # Insert analytical results for R=0 and eta=0
         for i, kappa_recip in enumerate(kappa_recips):
             for j, alpha in enumerate(alphas):
-                sp = Species('kappa-cairns', n=1e11, T=1000, kappa=1.0/kappa_recip, alpha=alpha)
+                sp = Species(n=1e11, T=1000, kappa=1.0/kappa_recip, alpha=alpha)
                 geo = Cylinder(1.0, 1)
                 vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalize=True)
                 for k, R in enumerate(Rs):
@@ -410,8 +410,9 @@ def get_table(name, provide_points=True):
 
         # Insert analytical results for R=0 and eta=0
         for i, kappa_recip in enumerate(kappa_recips):
+            kappa = 1/kappa_recip if kappa_recip != 0 else float('inf')
             for j, alpha in enumerate(alphas):
-                sp = Species('kappa-cairns', n=1e11, T=1000, kappa=1.0/kappa_recip, alpha=alpha)
+                sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
                 geo = Sphere(1.0)
                 vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalize=True)
                 for k, R in enumerate(Rs):

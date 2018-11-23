@@ -28,7 +28,7 @@ from scipy.constants import value as constants
 from copy import deepcopy
 import numpy as np
 
-def finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False, flip_kappa=False):
+def finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False):
 
     if isinstance(species, list):
         if normalize == True:
@@ -72,22 +72,16 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
         table += ' cylinder'
 
     if "darian-marholm" in table:
-        table = get_table(table, flip_kappa=flip_kappa)
+        table = get_table(table)
         pts = table['points']
         vals = table['values'].reshape(-1)
-        if flip_kappa:
-            kappa = 1/kappa
-        else:
-            kappa = np.min([kappa, 1000])
-        print(kappa, alpha, R, eta, -eta[indices_p])
-        I[indices_p] = I0*griddata(pts, vals, (kappa, alpha, R, -eta[indices_p]))
-        print(I)
+        I[indices_p] = I0*griddata(pts, vals, (1/kappa, alpha, R, eta[indices_p]))
 
     else:
         table = get_table(table)
         pts = table['points']
         vals = table['values'].reshape(-1)
-        I[indices_p] = I0*griddata(pts, vals, (R, -eta[indices_p]))
+        I[indices_p] = I0*griddata(pts, vals, (R, eta[indices_p]))
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
 
