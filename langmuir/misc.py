@@ -25,9 +25,10 @@ logger = logging.getLogger('langmuir')
 logging.basicConfig()
 
 def make_array(arr):
+    """
+    Takes a list, tuple, integer or float and returns a numpy array.
+    """
     if isinstance(arr, (int, float)):
-        arr = np.array([arr], dtype=np.float)
-    elif isinstance(arr, (list, tuple)):
-        arr = np.array(arr, dtype=np.float)
-    return arr
+        arr = [arr]
+    return np.array(arr, dtype=np.float)
 
