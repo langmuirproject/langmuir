@@ -18,6 +18,8 @@ GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License
 along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+from __future__ import division
 import logging
 import numpy as np
 
