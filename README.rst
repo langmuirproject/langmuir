@@ -84,8 +84,54 @@ Basic Usage
 Function Overview
 -----------------
 
-Example: Plotting normalized IV-characteristic
+Example: Plotting IV-characteristic
 ----------------------------------------------
+
+.. code:: ipython3
+
+    %matplotlib inline
+    
+    from langmuir import *
+    import matplotlib.pyplot as plt
+    
+    n  = 1e11 # Plasma number density
+    Te = 2000 # Electron temperature
+    Ti = 1200 # Ion temperature 
+    
+    # Create electron and ion species with number density and temperatures as specified above
+    electrons = Species('electron', n=n, T=Te)
+    ions = Species('proton', n=n, T=Ti)
+    species = [electrons, ions] 
+    
+    # Create the geometry for a spherical probe with radius 1mm
+    sphere = Sphere(r=1e-3)
+    # Create the geometry for a cylindrical probe with radius 1mm and length 25mm
+    cylinder = Cylinder(r=1e-3, l=25e-3)
+    
+    # Create an array of bias voltages between -2.1V to 2.1V
+    Vs = np.linspace(-2.1, 2.1, 200)
+    
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.add_subplot(111)
+    
+    # Obtain the current predicted by OML theory
+    I_sp = OML_current(sphere, species, Vs, normalize=False)  # For the spherical probe
+    I_cp = OML_current(cylinder, species, Vs, normalize=False)# For the cylindrical probe
+    
+    # The currents are multiplied by 1e6 to display the results in micro Ampere.
+    ax.plot(Vs, -I_sp*1e6, label='Sphere')  
+    ax.plot(Vs, -I_cp*1e6, label='Cylinder')
+    
+    ax.set_xlim([-2., 2.])
+    ax.set_xlabel(r'$V_{\mathrm{p}} [\mathrm{V}]$')
+    ax.set_ylabel(r'$I_{\mathrm{p}} [\mathrm{\mu A}]$')
+    ax.grid(True)
+    ax.legend()
+    plt.show()
+
+
+
+.. image:: IV_characteristic.png
 
 Example: Finding unknown voltage
 --------------------------------
