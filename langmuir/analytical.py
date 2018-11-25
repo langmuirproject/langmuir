@@ -147,7 +147,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     I = np.zeros_like(eta, dtype=float)
 
-    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine eps
+    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine 
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
