@@ -10,7 +10,7 @@ Langmuir
 .. image:: https://img.shields.io/pypi/pyversions/langmuir.svg
     :target: https://pypi.org/project/langmuir
 
-Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes
+Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes.
 
 Installation
 ------------
@@ -22,10 +22,11 @@ Or download the GitHub repository https://github.com/langmuirproject/langmuir.gi
 
     python setup.py install
 
-Usage of OML Functions
-----------------------
+Getting Started
+---------------
+The Langmuir library contains a collection of functions that compute the current collected by a Langmuir probe according to various theories and models. These functions take as arguments the probe geometry, for instance ``Cylinder``, and a plasma, where a plasma may consist of one or more ``Species``.
 
-To compute the current collected for a sweep of voltages by a 25mm long cylindrical probe with radius 0.255mm in a plasma consisting of oxygen ions and electrons with density 1e11 and temperature of 1000K::
+As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The plasma consists of electrons and singly charged oxygen ions, both with a density of 1e11 and a temperature of 1000K. The current-voltage charactersitic according to OML theory is easily computed and plotted::
 
     >>> from langmuir import *
     >>> import numpy as np
@@ -54,8 +55,26 @@ To compute the current collected for a sweep of voltages by a 25mm long cylindri
 
 .. image:: IV_characteristics.png
 
-Usage of Tables
----------------
+Notice that the characteristic includes all regions (ion saturation, electron retardation and electron saturation), and do not rely on approximations to the OML theory requiring the voltage to be within a certain range. What's more, it's easy to take into account for instance finite-radius effects, by replacing ``OML_current()`` with ``finite_radius_current()``.
+
+Specifying the geometry
+-----------------------
+
+Specifying the plasma
+---------------------
+
+Computing fundamental plasma parameters
+---------------------------------------
+
+Models for collected current
+----------------------------
+- Include example of normalizing
+
+Solving for an unknown voltage
+------------------------------
+
+DEPRECATED: Usage of Tables
+---------------------------
 
 The tables for attracted-species current for finite-radius probes in an isothermal Maxwellian plasma given by Laframboise is implemented. E.g. to get the normalized current for a spherical probe of 1 Debye length and a normalized potential of 25::
 
@@ -89,15 +108,3 @@ you must multiply by the probe length::
     >> I = I0*l*f(R, eV_kT)
     >> print("{:.1f}uA".format(I*1e6))
     -711.0uA
-
-Basic Usage
------------
-
-Function Overview
------------------
-
-Example: Plotting IV-characteristic
-----------------------------------------------
-
-Example: Finding unknown voltage
---------------------------------
