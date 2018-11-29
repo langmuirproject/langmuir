@@ -57,14 +57,96 @@ As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The p
 
 Notice that the characteristic includes all regions (ion saturation, electron retardation and electron saturation), and do not rely on approximations to the OML theory requiring the voltage to be within a certain range. What's more, it's easy to take into account for instance finite-radius effects, by replacing ``OML_current()`` with ``finite_radius_current()``.
 
-Specifying the geometry
------------------------
+Specifying a species
+--------------------
+A species is specified using a range of keyword arguments upon initialization of a ``Species`` object.
+At the very least, you must specify the density and the temperature (or thermal speed)::
 
-Specifying the plasma
----------------------
+    >>> Species(n=1e11, T=1000)
+
+Since nothing more is specified, this represents Maxwellian-distributed electrons. The full set of keywords is as follows:
+
+    +---------------------------+-----------------+-----------+--------------------------+
+    | Quantity                  | Default value   | Keyword   | Units                    |
+    +===========================+=================+===========+==========================+
+    | Charge                    | electron        | ``q``     | Coulombs                 |
+    |                           +                 +-----------+--------------------------+
+    |                           |                 | ``Z``     | elementary charges       |
+    +---------------------------+                 +-----------+--------------------------+
+    | Mass                      |                 | ``m``     | kilograms                |
+    |                           +                 +-----------+--------------------------+
+    |                           |                 | ``amu``   | atomic mass units        |
+    +---------------------------+-----------------+-----------+--------------------------+
+    | Density                   |                 | ``n``     | partices per cubic meter |
+    +---------------------------+-----------------+-----------+--------------------------+
+    | Temperature/thermal speed |                 | ``T``     | Kelvin                   |
+    |                           +                 +-----------+--------------------------+
+    |                           |                 | ``eV``    | electron-volts           |
+    |                           +                 +-----------+--------------------------+
+    |                           |                 | ``vth``   | meters per second        |
+    +---------------------------+-----------------+-----------+--------------------------+
+    | Spectral index kappa      | Maxwellian      | ``kappa`` | dimensionless            |
+    +---------------------------+                 +-----------+--------------------------+
+    | Spectral index alpha      |                 | ``alpha`` | dimensionless            |
+    +---------------------------+-----------------+-----------+--------------------------+
+
+The particles are actually Kappa-Cairns distributed with spectral indices ``kappa`` and ``alpha``. When ``kappa`` equals infinity (``float('inf')``) the distribution reduces to the Cairns distribution, and when ``alpha==0``, it reduces to the Kappa-distribution. When both are true, it reduces to the Maxwellian distribution.
+
+The charge and mass can also be specified using one of three keywords:
+
+    - 'electron'
+    - 'positron'
+    - 'proton'
+
+This must come before the keyword arguments, for instance::
+
+    >>> Species('proton', n=1e11, eV=0.1)
 
 Computing fundamental plasma parameters
 ---------------------------------------
+The Langmuir library is also convenient to use for quick computations of fundamental plasma parameters, since ``Species`` computes these upon initialization. For instance, to get the electron Debye length of a plasma with a certain density and temperature::
+
+    >>> Species(n=1e11, eV=0.1).debye
+    0.007433942027347403
+
+The following member variables and methods are accessible in ``Species``:
+
+    +-----------------+---------------------------------+
+    | Member          | Description                     |
+    +=================+=================================+
+    | ``debye``       | The Debye length                |
+    +-----------------+---------------------------------+
+    | ``omega_p``     | The angular plasma frequency    |
+    +-----------------+---------------------------------+
+    | ``freq_p``      | The linear plasma frequency     |
+    +-----------------+---------------------------------+
+    | ``period_p``    | The plasma period               |
+    +-----------------+---------------------------------+
+    | ``omega_c(B)``  | The angular cyclotron frequency |
+    +-----------------+---------------------------------+
+    | ``freq_c(B)``   | The linear cyclotron frequency  |
+    +-----------------+---------------------------------+
+    | ``period_c(B)`` | The cyclotron period            |
+    +-----------------+---------------------------------+
+    | ``larmor(B)``   | The larmor radius               |
+    +-----------------+---------------------------------+
+
+The latter four members are methods which take the magnitude of the magnetic flux density as an argument. In addition, every valid keyword argument is also a valid member variable::
+
+    >>> Species(n=1e11, T=1000).eV
+    0.08617330337217212
+
+Finally, the total Debye length of a plasma consisting of multiple species can be obtained using a separate ``debye()`` function::
+
+    >>> plasma = []
+    >>> plasma.append(Species('electron' , n=1e11, T=1000))
+    >>> plasma.append(Species(amu=16, Z=1, n=1e11, T=1000))
+    >>> debye(plasma)
+    0.004879671013271479
+
+Specifying the geometry
+-----------------------
+
 
 Models for collected current
 ----------------------------

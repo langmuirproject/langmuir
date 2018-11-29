@@ -97,6 +97,9 @@ class Species(object):
                 self.q = e
                 self.m = me
 
+        self.Z = self.q/e
+        self.amu = self.m/amu
+
         self.n = kwargs['n']
 
         if 'eV' in kwargs:
