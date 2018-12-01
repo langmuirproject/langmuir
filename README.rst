@@ -66,37 +66,37 @@ At the very least, you must specify the density and the temperature (or thermal 
 
 Since nothing more is specified, this represents Maxwellian-distributed electrons. The full set of keywords is as follows:
 
-    +---------------------------+-----------------+-----------+--------------------------+
-    | Quantity                  | Default value   | Keyword   | Units                    |
-    +===========================+=================+===========+==========================+
-    | Charge                    | electron        | ``q``     | Coulombs                 |
-    |                           +                 +-----------+--------------------------+
-    |                           |                 | ``Z``     | elementary charges       |
-    +---------------------------+                 +-----------+--------------------------+
-    | Mass                      |                 | ``m``     | kilograms                |
-    |                           +                 +-----------+--------------------------+
-    |                           |                 | ``amu``   | atomic mass units        |
-    +---------------------------+-----------------+-----------+--------------------------+
-    | Density                   |                 | ``n``     | partices per cubic meter |
-    +---------------------------+-----------------+-----------+--------------------------+
-    | Temperature/thermal speed |                 | ``T``     | Kelvin                   |
-    |                           +                 +-----------+--------------------------+
-    |                           |                 | ``eV``    | electron-volts           |
-    |                           +                 +-----------+--------------------------+
-    |                           |                 | ``vth``   | meters per second        |
-    +---------------------------+-----------------+-----------+--------------------------+
-    | Spectral index kappa      | Maxwellian      | ``kappa`` | dimensionless            |
-    +---------------------------+                 +-----------+--------------------------+
-    | Spectral index alpha      |                 | ``alpha`` | dimensionless            |
-    +---------------------------+-----------------+-----------+--------------------------+
++---------------------------+-----------+--------------------------+------------------+
+| Quantity                  | Keyword   | Units                    | Default value    |
++===========================+===========+==========================+==================+
+| Charge                    | ``q``     | Coulombs                 | electron         |
+|                           +-----------+--------------------------+ charge           |
+|                           | ``Z``     | elementary charges       |                  |
++---------------------------+-----------+--------------------------+------------------+
+| Mass                      | ``m``     | kilograms                | electron         |
+|                           +-----------+--------------------------+ mass             |
+|                           | ``amu``   | atomic mass units        |                  |
++---------------------------+-----------+--------------------------+------------------+
+| Density                   | ``n``     | partices per cubic meter |                  |
++---------------------------+-----------+--------------------------+------------------+
+| Temperature/thermal speed | ``T``     | Kelvin                   |                  |
+|                           +-----------+--------------------------+                  |
+|                           | ``eV``    | electron-volts           |                  |
+|                           +-----------+--------------------------+                  |
+|                           | ``vth``   | meters per second        |                  |
++---------------------------+-----------+--------------------------+------------------+
+| Spectral index kappa      | ``kappa`` | dimensionless            | ``float('inf')`` |
++---------------------------+-----------+--------------------------+------------------+
+| Spectral index alpha      | ``alpha`` | dimensionless            | ``0``            |
++---------------------------+-----------+--------------------------+------------------+
 
-The particles are actually Kappa-Cairns distributed with spectral indices ``kappa`` and ``alpha``. When ``kappa`` equals infinity (``float('inf')``) the distribution reduces to the Cairns distribution, and when ``alpha==0``, it reduces to the Kappa-distribution. When both are true, it reduces to the Maxwellian distribution.
+The Langmuir library supports the general Kappa-Cairns velocity distribution, but defaults to Maxwellian, which is a special case of the Kappa-Cairns distribution.Kappa, Cairns or Kappa-Cairns distributed particles are obtained by specifying ``kappa``, ``alpha`` or both, respectively.
 
-The charge and mass can also be specified using one of three keywords:
+The charge and mass can also be specified using one of three self-descriptive flag:
 
-    - 'electron'
-    - 'positron'
-    - 'proton'
+- 'electron'
+- 'positron'
+- 'proton'
 
 This must come before the keyword arguments, for instance::
 
@@ -111,25 +111,25 @@ The Langmuir library is also convenient to use for quick computations of fundame
 
 The following member variables and methods are accessible in ``Species``:
 
-    +-----------------+---------------------------------+
-    | Member          | Description                     |
-    +=================+=================================+
-    | ``debye``       | The Debye length                |
-    +-----------------+---------------------------------+
-    | ``omega_p``     | The angular plasma frequency    |
-    +-----------------+---------------------------------+
-    | ``freq_p``      | The linear plasma frequency     |
-    +-----------------+---------------------------------+
-    | ``period_p``    | The plasma period               |
-    +-----------------+---------------------------------+
-    | ``omega_c(B)``  | The angular cyclotron frequency |
-    +-----------------+---------------------------------+
-    | ``freq_c(B)``   | The linear cyclotron frequency  |
-    +-----------------+---------------------------------+
-    | ``period_c(B)`` | The cyclotron period            |
-    +-----------------+---------------------------------+
-    | ``larmor(B)``   | The larmor radius               |
-    +-----------------+---------------------------------+
++-----------------+---------------------------------+
+| Member          | Description                     |
++=================+=================================+
+| ``debye``       | The Debye length                |
++-----------------+---------------------------------+
+| ``omega_p``     | The angular plasma frequency    |
++-----------------+---------------------------------+
+| ``freq_p``      | The linear plasma frequency     |
++-----------------+---------------------------------+
+| ``period_p``    | The plasma period               |
++-----------------+---------------------------------+
+| ``omega_c(B)``  | The angular cyclotron frequency |
++-----------------+---------------------------------+
+| ``freq_c(B)``   | The linear cyclotron frequency  |
++-----------------+---------------------------------+
+| ``period_c(B)`` | The cyclotron period            |
++-----------------+---------------------------------+
+| ``larmor(B)``   | The larmor radius               |
++-----------------+---------------------------------+
 
 The latter four members are methods which take the magnitude of the magnetic flux density as an argument. In addition, every valid keyword argument is also a valid member variable::
 
@@ -146,10 +146,27 @@ Finally, the total Debye length of a plasma consisting of multiple species can b
 
 Specifying the geometry
 -----------------------
+Langmuir supports two probe geometries, with self-descriptive names and the following signatures:
 
+- ``Sphere(r)``
+- ``Cylinder(r, l)``
+
+``r`` and ``l`` representes the radius and length, respectively, of the geometry.
 
 Models for collected current
 ----------------------------
+
+``normalization_current(geometry, species)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``thermal_current(geometry, species, normalize=False)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``OML_current(geometry, species, V=None, eta=None, normalize=False)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``finite_radius_current(geometry, species, V=None, eta=None, normalize=False, table='laframboise-darian-marholm')``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Include example of normalizing
 
 Solving for an unknown voltage
