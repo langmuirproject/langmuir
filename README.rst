@@ -94,9 +94,9 @@ The Langmuir library supports the general Kappa-Cairns velocity distribution, bu
 
 The charge and mass can also be specified using one of three self-descriptive flag:
 
-- 'electron'
-- 'positron'
-- 'proton'
+- ``'electron'``
+- ``'positron'``
+- ``'proton'``
 
 This must come before the keyword arguments, for instance::
 
@@ -155,18 +155,18 @@ Langmuir supports two probe geometries, with self-descriptive names and the foll
 
 Models for collected current
 ----------------------------
+Langmuir comes with several models for the collected current. Each model is represented by a function which takes a ``geometry`` and a ``species`` argument. The ``geometry`` is one of the above probe geometries, and the ``species`` parameters is either a single ``Species`` object or a list of such if it is desirable to take into account the effect of all species in a plasma. In addition, the model usually takes the absolute potential of the probe as an arugment, either in terms of volts, using the ``V`` argument, or in terms of normalized voltage e*V/(k*T) using the ``eta`` argument.
 
-``normalization_current(geometry, species)``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++---------------------------+-----------------------------+
+| ``normalization_current`` |                             |
++---------------------------+-----------------------------+
+| ``thermal_current``       |                             |
++---------------------------+-----------------------------+
+| ``OML_current``           |                             |
++---------------------------+-----------------------------+
+| ``finite_radius_current`` |                             |
++---------------------------+-----------------------------+
 
-``thermal_current(geometry, species, normalize=False)``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``OML_current(geometry, species, V=None, eta=None, normalize=False)``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``finite_radius_current(geometry, species, V=None, eta=None, normalize=False, table='laframboise-darian-marholm')``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Include example of normalizing
 
 Solving for an unknown voltage
