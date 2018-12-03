@@ -136,7 +136,7 @@ The latter four members are methods which take the magnitude of the magnetic flu
     >>> Species(n=1e11, T=1000).eV
     0.08617330337217212
 
-Finally, the total Debye length of a plasma consisting of multiple species can be obtained using a separate ``debye()`` function::
+Finally, the total Debye length of a plasma consisting of multiple species can be obtained using the ``debye()`` function::
 
     >>> plasma = []
     >>> plasma.append(Species('electron' , n=1e11, T=1000))
@@ -155,19 +155,24 @@ Langmuir supports two probe geometries, with self-descriptive names and the foll
 
 Models for collected current
 ----------------------------
-Langmuir comes with several models for the collected current. Each model is represented by a function which takes a ``geometry`` and a ``species`` argument. The ``geometry`` is one of the above probe geometries, and the ``species`` parameters is either a single ``Species`` object or a list of such if it is desirable to take into account the effect of all species in a plasma. In addition, the model usually takes the absolute potential of the probe as an arugment, either in terms of volts, using the ``V`` argument, or in terms of normalized voltage e*V/(k*T) using the ``eta`` argument.
+Langmuir comes with several models for the collected current. Each model is represented by a function which takes a ``geometry`` and a ``species`` argument. The ``geometry`` is one of the above probe geometries, and the ``species`` parameters is either a single ``Species`` object or a list of such if it is desirable to take into account the effect of all species in a plasma. Most models also depend on the potential of the probe with respect to the background plasma. The potential can either be specified in volts using th ``V`` argument, or in terms of normalized voltage e*V/(k*T) using the ``eta`` argument. If these are Numpy arrays, the output will be a Numpy array of collected currents. The ``normalize`` argument can be set to ``True`` to return currents in normalized quantities rather than Ampére. Below is a description of all models:
 
-+---------------------------+-----------------------------+
-| ``normalization_current`` |                             |
-+---------------------------+-----------------------------+
-| ``thermal_current``       |                             |
-+---------------------------+-----------------------------+
-| ``OML_current``           |                             |
-+---------------------------+-----------------------------+
-| ``finite_radius_current`` |                             |
-+---------------------------+-----------------------------+
+- ``OML_current(geometry, species, V=None, eta=None, normalize=False)``
+  Current according to the "Orbital Motion Limited" theory. This assumes an infinitesimal probe radius compared to the Debye length, and for cylinders, infinite length. Spheres with radii less than 0.2 Debye lengths, or Cylinders with radii less than 1 Debye length is usually very well approximated as having an infinitesimal radius.
+- ``finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False)``
+  This model interpolates between tabulated values by Laframboise and Darian et al. which takes into account the effect of finite radius. If radius, voltage or spectral indices are outside the convex hull of the tabulated values, `nan` are returned. Valid radii are 0-10 debye lengths (100 for Maxwellian), normalized voltages must be between -25 and 0 (repelled species are neglected), alpha between 0 and 0.2, and kappa no less than 4.
+- ``thermal_current(geometry, species, normalize=False)``
+  This is the current absorbed by an object fixed at zero potential due to random thermal motion of particles.
+- ``normalization_current(geometry, species)``
+  This is the current which is used for normalizing the current from the other models. For Maxwellian this coincides with the thermal current, whereas for other distributions it is what would have been the thermal current if the particles were Maxwellian.
 
-- Include example of normalizing
+As an example, the following snippet computes the normalized electron current of a probe of 3 Debye lengths radius and normalized voltage of -10::
+
+    >>> sp  = Species(n=1e11, T=1000)
+    >>> geo = Cylinder(r=3*sp.debye, l=1)
+    >>> I = finite_radius_current(geo, sp, eta=-10, normalize=True)
+
+Notice that setting ``l==1`` means you get the current per unit length.
 
 Solving for an unknown voltage
 ------------------------------
