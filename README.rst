@@ -160,7 +160,7 @@ Langmuir comes with several models for the collected current. Each model is repr
 - ``OML_current(geometry, species, V=None, eta=None, normalize=False)``
   Current according to the "Orbital Motion Limited" theory. This assumes an infinitesimal probe radius compared to the Debye length, and for cylinders, infinite length. Spheres with radii less than 0.2 Debye lengths, or Cylinders with radii less than 1 Debye length is usually very well approximated as having an infinitesimal radius.
 - ``finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False)``
-  This model interpolates between tabulated values by Laframboise and Darian et al. which takes into account the effect of finite radius. If radius, voltage or spectral indices are outside the convex hull of the tabulated values, `nan` are returned. Valid radii are 0-10 debye lengths (100 for Maxwellian), normalized voltages must be between -25 and 0 (repelled species are neglected), alpha between 0 and 0.2, and kappa no less than 4.
+  This model interpolates between tabulated values by Laframboise and Darian et al. which takes into account the effect of finite radius. If radius, voltage or spectral indices are outside the convex hull of the tabulated values, ``nan`` are returned. Valid radii are 0-10 debye lengths (100 for Maxwellian), normalized voltages must be between -25 and 0 (repelled species are neglected), alpha between 0 and 0.2, and kappa no less than 4.
 - ``thermal_current(geometry, species, normalize=False)``
   This is the current absorbed by an object fixed at zero potential due to random thermal motion of particles.
 - ``normalization_current(geometry, species)``
@@ -174,41 +174,52 @@ As an example, the following snippet computes the normalized electron current of
 
 Notice that setting ``l==1`` means you get the current per unit length.
 
-Solving for an unknown voltage
-------------------------------
+Inverse problems
+----------------
+Sometimes the collected current of one or more probes is known and one would like to solve for one or more other parameters. The Langmuir library do not address this analytically in part due to the vast number of such inverse problems, and in part due to some characteristics not being invertible (for instance those who are of tabulated values). However, it is in principle possible to apply numerical methods of root solving, least squares, etc. along with the models in Langmuir.
 
-DEPRECATED: Usage of Tables
----------------------------
+Consider a cylindrical probe with known dimensions and a positive but unknown voltage collecting a current of -0.4uA in a Maxwellian plasma with known density and temperature. What is the voltage? We shall neglect the current due to ions, and define a residual function. This residual is the difference between the current collected by a probe at a given potential, and the actual collected current, and it is used by a least squares algorithm to compute the voltage::
 
-The tables for attracted-species current for finite-radius probes in an isothermal Maxwellian plasma given by Laframboise is implemented. E.g. to get the normalized current for a spherical probe of 1 Debye length and a normalized potential of 25::
+    >>> from langmuir import *
+    >>> from scipy.optimize import leastsq
 
-    >> from langmuir import *
-    >> R = 1
-    >> eV_kT = 25
+    >>> sp = Species(n=1e11, T=1000)
+    >>> geo = Cylinder(1e-3, 25e-3)
+    >>> I = -0.4e-6
 
-    >> f = lafr_attr_current('Sphere')
-    >> I = f(R, eV_kT)
-    >> print("{:.3f}".format(I))
-    21.895
+    >>> def residual(V):
+    >>>     return finite_radius_current(geo, sp, V) - I
 
-The function linearly interpolates between values given in Laframboise's tables.
-The argument ``kind`` can be used to change to quadratic interpolation.
-To get the current in Ampére's you must find the normalizing current::
+    >>> x, c = leastsq(residual, 0)
+    >>> print(x[0])
+    0.6265540484991013
 
-    >> n=1e11
-    >> T=1e3
+The reader may verify that this voltage indeed results in the correct current. Notice also that we were in fact able to invert the model ``finite_radius_current``, which consists of tabulated values.
 
-    >> I0 = lafr_norm_current('Sphere', R, n, T)
-    >> I = I0*f(R, eV_kT)
-    >> print("{:.1f}mA".format(I*1e3))
-    -216.5mA
+A slightly more interesting inversion problem, is that of determining the ionospheric density from four cylindrical Langmuir probes with known bias voltages with respect to a spacecraft, but an unknown floating potential ``V0`` of the spacecraft with respect to the plasma. We shall assume the bias voltages to be 2.5, 4.0, 5.5 and 7.0 volts. In the below example, we first construct the currents for such probes by assuming a floating potential and a set of plasma parameters, but we do not use this knowledge in the inversion. We do, however, make an initial guess ``x0`` which we believe are somewhat close to the answer::
 
-Likewise for cylindrical probes. The current is then in Ampère's per meter so
-you must multiply by the probe length::
+    >>> from langmuir import *
+    >>> from scipy.optimize import leastsq
 
-    >> l = 25e-3
-    >> f = lafr_attr_current('Cylinder')
-    >> I0 = lafr_norm_current('Cylinder', R, n, T)
-    >> I = I0*l*f(R, eV_kT)
-    >> print("{:.1f}uA".format(I*1e6))
-    -711.0uA
+    >>> geo = Cylinder(1e-3, 25e-3)
+    >>> V0 = -0.5
+    >>> V = np.array([2.5, 4.0, 5.5, 7.0])
+    >>> I = OML_current(geo, Species(n=120e10, T=1000), V+V0)
+
+    >>> def residual(x):
+    >>>     n, V0 = x
+    >>>     return OML_current(geo, Species(n=n, T=1500), V+V0) - I
+
+    >>> x0 = [10e10, -0.3]
+    >>> x, c = leastsq(residual, x0)
+    >>> n, V0 = x
+
+    >>> print(n)
+    1199899818493.931
+
+    >>> print(V0)
+    -0.5417515655165968
+
+The method correctly determined the density to be 120e10. However, the floating potential ``V0`` is off by almost ten percent. The reason is that the temperature is considered unknown, and assumed to be 1500K when solving the problem, while it is actually 1000K. Since we have four measurements (four equations) and only two unknowns, it is tempting to also include the temperature as an unknown parameter and try to solve for it. However, if this is done the least squares algorithm will fail miserably. The reason is that the set of equations arising for the attracted-species current of cylindrical probes are singular and cannot be solved for even analytically. Fortunately, both the temperature and floating potential can be eliminated from the equation when analytically solving for the density, and similarly it also works to obtain the density from the least squares algorithm. Since the floating potential and temperature represent a coupled unknown which cannot be solved for, an error in assuming one is reflected as an error in the other.
+
+This demonstrates the usefulness as well as challenges and subtleties of solving inverse Langmuir problems.
