@@ -35,6 +35,49 @@ def test_thermal_current_maxwellian_normalized():
     I = thermal_current(geo, sp, normalize=True)
     assert(I == approx(1))
 
+def test_thermal_current_cairns_normalized():
+    sp = Species(n=1e11, T=1000, alpha=0.2)
+    sp_m = Species(n=1e11, T=1000, alpha=0.0)
+
+    geo = Cylinder(3 * sp.debye, 1)
+    I = thermal_current(geo, sp, normalize=True)
+    I_m = thermal_current(geo, sp_m, normalize=True)
+    assert(I == approx(0.4))
+    assert(I_m == approx(1))
+
+    geo = Sphere(3 * sp.debye)
+    I = thermal_current(geo, sp, normalize=True)
+    I_m = thermal_current(geo, sp_m, normalize=True)
+    assert(I == approx(1.45))
+    assert(I_m == approx(1))
+
+def test_thermal_current_kappa_normalized():
+    sp = Species(n=1e11, T=1000, kappa=4)
+
+    geo = Cylinder(3 * sp.debye, 1)
+    I = thermal_current(geo, sp, normalize=True)
+    assert(I == approx(1.8446619684315548))
+
+    geo = Sphere(3 * sp.debye)
+    I = thermal_current(geo, sp, normalize=True)
+    assert(I == approx(0.95153286194814457))
+
+def test_thermal_current_kappa_cairns_normalized():
+    sp = Species(n=1e11, T=1000, alpha=0.2, kappa=4)
+    sp_k = Species(n=1e11, T=1000, alpha=0, kappa=4)
+
+    geo = Cylinder(3 * sp.debye, 1)
+    I = thermal_current(geo, sp, normalize=True)
+    I_k = thermal_current(geo, sp_k, normalize=True)
+    assert(I == approx(0.43920523057894167))
+    assert(I_k == approx(1.8446619684315548))
+
+    geo = Sphere(3 * sp.debye)
+    I = thermal_current(geo, sp, normalize=True)
+    I_k = thermal_current(geo, sp_k, normalize=True)
+    assert(I == approx(2.5374209651950519))
+    assert(I_k == approx(0.95153286194814457))
+
 def test_thermal_OML_current_maxwellian_normalized():
     sp = Species(n=1e11, T=1000)
 
@@ -73,3 +116,66 @@ def test_OML_current_not_normalized_by_default():
     geometry = Cylinder(0.255e-3, 25e-3)
     species  = Species(n=10e10, eV=0.26)
     I1 = OML_current(geometry, species, 5)
+
+def test_OML_current_cairns():
+    sp = Species(n=1e11, T=1000, alpha=0.2)
+    sp_m = Species(n=1e11, T=1000, alpha=0.0)
+
+    # Cylindrical geometry
+    geo = Cylinder(0.255e-3, 25e-3)
+    # Attracted particles
+    I = OML_current(geo, sp, eta=-5)
+    assert(I == approx(-9.3492e-8))
+    # Limit alpha->0, i.e., Maxwellian
+    I = OML_current(geo, sp_m, eta=-5)
+    assert(I == approx(-8.68504e-8))
+    # Repelled particles
+    I = OML_current(geo, sp, eta=5)
+    assert(I == approx(-2.21933e-9))
+
+    # Spherical geometry
+    geo = Sphere(0.255e-3)
+    # Attracted particles
+    I = OML_current(geo, sp, eta=-5)
+    assert(I == approx(-3.02208e-9))
+    # The limit to Maxwellian VDF, alpha->0
+    I = OML_current(geo, sp_m, eta=-5)
+    assert(I == approx(-3.85797e-9))
+    # Repelled particles
+    I = OML_current(geo, sp, eta=5)
+    assert(I == approx(-4.52743e-11))
+
+def test_OML_current_kappa_cairns():
+    sp = Species(n=1e11, T=1000, kappa=4.0, alpha=0.2)
+    sp_k = Species(n=1e11, T=1000, kappa=4.0, alpha=0.0)
+
+    # Cylindrical geometry
+    geo = Cylinder(0.255e-3, 25e-3)
+    # Attracted particles - Kappa-Cairns VDF
+    I = OML_current(geo, sp, eta=-5)
+    assert(I == approx(-1.19482e-07))
+    # Attracted particles - Kappa VDF
+    I = OML_current(geo, sp_k, eta=-5)
+    assert(I == approx(-8.66487e-08))
+    # Repelled particles - Kappa-Cairns VDF
+    I = OML_current(geo, sp, eta=5)
+    assert(I == approx(-3.9989e-8))
+    # Repelled particles - Kappa VDF
+    I = OML_current(geo, sp_k, eta=5)
+    assert(I == approx(-1.1108e-9))
+
+    # Spherical geometry
+    geo = Sphere(0.255e-3)
+    # Attracted particles - Kappa-Cairns VDF
+    I = OML_current(geo, sp, eta=-5)
+    assert(I == approx(-3.2631e-9))
+    # Attracted particles - Kappa VDF
+    I = OML_current(geo, sp_k, eta=-5)
+    assert(I == approx(-4.28282e-9))
+    # Repelled particles - Kappa-Cairns VDF
+    I = OML_current(geo, sp, eta=5)
+    assert(I == approx(-8.15775e-10))
+    # Repelled particles - Kappa VDF
+    I = OML_current(geo, sp_k, eta=5)
+    assert(I == approx(-2.26604e-11))
+

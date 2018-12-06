@@ -132,9 +132,9 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
             I += OML_current(geometry, s, V, eta)
         return I
 
-    q, m, n, T = species.q, species.m, species.n, species.T
+    q, T = species.q, species.T
     kappa, alpha = species.kappa, species.alpha
-    vth = species.vth
+    
     k = constants('Boltzmann constant')
 
     if V is not None:
@@ -147,7 +147,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     I = np.zeros_like(eta, dtype=float)
 
-    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine 
+    eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine eps
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
@@ -168,7 +168,6 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         I0 = normalization_current(geometry, species)
 
     if isinstance(geometry, Sphere):
-        r = geometry.r
 
         # repelled particles:
         if species.kappa == float('inf'):
@@ -183,7 +182,6 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         I[indices_p] = I0*C*D*(1.+F*eta[indices_p])
 
     elif isinstance(geometry, Cylinder):
-        r, l = geometry.r, geometry.l
 
         # repelled particles:
         if species.kappa == float('inf'):
