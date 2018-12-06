@@ -123,27 +123,33 @@ def test_OML_current_cairns():
 
     # Cylindrical geometry
     geo = Cylinder(0.255e-3, 25e-3)
-    # Attracted particles
+    # Attracted particles - Cairns VDF
     I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-9.3492e-8))
-    # Limit alpha->0, i.e., Maxwellian
+    #  Attracted particles - Maxwellian VDF
     I = OML_current(geo, sp_m, eta=-5)
     assert(I == approx(-8.68504e-8))
-    # Repelled particles
+    # Repelled particles - Cairns VDF
     I = OML_current(geo, sp, eta=5)
     assert(I == approx(-2.21933e-9))
+    # Repelled particles - Maxwellian VDF
+    I = OML_current(geo, sp_m, eta=5)
+    assert(I == approx(-2.12376e-10))
 
     # Spherical geometry
     geo = Sphere(0.255e-3)
-    # Attracted particles
+    # Attracted particles - Cairns VDF
     I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-3.02208e-9))
-    # The limit to Maxwellian VDF, alpha->0
+    # Attracted particles - Maxwellian VDF
     I = OML_current(geo, sp_m, eta=-5)
     assert(I == approx(-3.85797e-9))
-    # Repelled particles
+    # Repelled particles - Cairns VDF
     I = OML_current(geo, sp, eta=5)
     assert(I == approx(-4.52743e-11))
+    # Repelled particles - Cairns VDF
+    I = OML_current(geo, sp_m, eta=5)
+    assert(I == approx(-4.33247e-12)
 
 def test_OML_current_kappa_cairns():
     sp = Species(n=1e11, T=1000, kappa=4.0, alpha=0.2)
