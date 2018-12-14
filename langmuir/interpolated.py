@@ -40,7 +40,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
             return None
         I = 0
         for s in species:
-            I += tabulated_current(geometry, s, V, eta, table)
+            I += finite_radius_current(geometry, s, V, eta, table)
         return I
 
     q, m, n, T = species.q, species.m, species.n, species.T
@@ -60,8 +60,6 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
-    R = geometry.r/species.debye
-
     if normalize:
         I0 = 1
     else:
@@ -71,6 +69,10 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
         table += ' sphere'
     elif isinstance(geometry, Cylinder):
         table += ' cylinder'
+    else:
+        raise ValueError('Geometry not supported: {}'.format(geometry))
+
+    R = geometry.r/species.debye
 
     if "darian-marholm" in table:
         table = get_table(table)

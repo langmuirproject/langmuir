@@ -185,4 +185,3 @@ def test_OML_current_kappa_cairns():
     # Repelled particles - Kappa VDF
     I = OML_current(geo, sp_k, eta=5)
     assert(I == approx(-2.26604e-11))
-

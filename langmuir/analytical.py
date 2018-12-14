@@ -75,6 +75,9 @@ def thermal_current(geometry, species, normalize=False):
     """
 
     if isinstance(species, list):
+        if normalize == True:
+            logger.error('Cannot normalize current to more than one species')
+            return None
         I = 0
         for s in species:
             I += thermal_current(geometry, s)
@@ -134,7 +137,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     q, T = species.q, species.T
     kappa, alpha = species.kappa, species.alpha
-    
+
     k = constants('Boltzmann constant')
 
     if V is not None:
