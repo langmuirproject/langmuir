@@ -26,6 +26,11 @@ import pytest
 
 # I generally try to test one point in each table, with unequal row/column
 # indices and where nearby elements differ from the one I test.
+# These tests are basically duplicates of the ones in test_interpolated.py,
+# but these were written first and tests the tables directly, whereas the
+# ones in test_interpolated.py tests that the functions using them returns
+# the correct values. If the tables are later organized in some other fashion,
+# one can probably remove this one.
 
 def test_laframboise_sphere():
     t = get_table('laframboise sphere')
@@ -79,8 +84,7 @@ def test_darian_marholm_cylinder():
     # Testing one for each alpha/kappa table
     assert(np.allclose(get_coords_and_value(t, 1, 0, 3, 1), [1/6, 0  , 3, -1, 1.509]))
 
-    # Testing that V=0 is the inaccurate one and that R=0 doesn't exist
-    # Fails due to error in thermal_current()
+    # Testing that V=0 is accurate one and that R=0 exists
     assert(np.allclose(get_coords_and_value(t, 0, 0, 1, 0), [0, 0, 1.0, 0, 1.0]))
     assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 3), [0, 0, 0.0, -3, 2.2417], rtol=1e-3))
 
