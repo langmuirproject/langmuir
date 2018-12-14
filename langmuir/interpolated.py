@@ -70,6 +70,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, table='laframbois
     elif isinstance(geometry, Cylinder):
         table += ' cylinder'
     else:
+        print('hei')
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye

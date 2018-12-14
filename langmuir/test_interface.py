@@ -143,5 +143,11 @@ def test_geometry_error(current, electron):
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
+    # Many functions will fail when obtaining the
+    # normalization current, which means to test the
+    # current function's own fail guard you must not
+    # use the normalization current.
+    if 'normalize' in args: kwargs['normalize'] = True
+
     with pytest.raises(ValueError):
         current('Bullshit', electron, **kwargs)
