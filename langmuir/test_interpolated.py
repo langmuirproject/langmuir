@@ -145,3 +145,54 @@ def test_laframboise_darian_marholm_cylinder(electron):
                               normalize=True,
                               table='laframboise-darian-marholm')
     assert(I == approx(2.701))
+
+def test_finite_radius_vs_OML():
+
+    sp = Species(n=1e11, T=1000, alpha=0.2, kappa=6)
+    geo = Sphere(0.2*sp.debye)
+    I_OML = OML_current(geo, sp, eta=-15)
+    I_fr = finite_radius_current(geo, sp, eta=-15)
+    assert(I_OML == approx(I_fr, 0.03))
+
+def test_discard_spectral_indices(caplog):
+
+    sp = Species(n=1e11, T=1000, alpha=0.2, kappa=6)
+    geo = Sphere(0.2*sp.debye)
+
+    I = finite_radius_current(geo, sp, eta=-15, table='laframboise')
+    assert(len(caplog.records) == 1)
+
+def test_discard_repelled_particles(caplog):
+
+    electron = Species(n=1e11, T=1000)
+    I = finite_radius_current(Sphere(electron.debye), electron, eta=[-1,1])
+    assert(len(caplog.records) == 1)
+    assert('negative' in caplog.text)
+    assert('positive' not in caplog.text)
+
+    ion = Species('proton', n=1e11, T=1000)
+    I = finite_radius_current(Sphere(ion.debye), ion, eta=[-1,1])
+    assert(len(caplog.records) == 2)
+    assert('positive' in caplog.text)
+
+def test_domain(caplog, electron):
+
+    # Too high voltage
+    I = finite_radius_current(Sphere(electron.debye), electron, eta=-30)
+    assert(np.isnan(I))
+
+    # Too large radius
+    I = finite_radius_current(Sphere(200*electron.debye), electron, eta=-20)
+    assert(np.isnan(I))
+
+    # Too high alpha
+    sp = Species(n=1e11, T=1000, alpha=0.3)
+    I = finite_radius_current(Sphere(sp.debye), sp, eta=-20)
+    assert(np.isnan(I))
+
+    # Too low kappa
+    sp = Species(n=1e11, T=1000, kappa=0.2)
+    I = finite_radius_current(Sphere(sp.debye), sp, eta=-20)
+    assert(np.isnan(I))
+
+    assert(len(caplog.records) == 4)

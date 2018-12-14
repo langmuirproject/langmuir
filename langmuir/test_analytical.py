@@ -112,10 +112,11 @@ def test_normalization_current_multiple_species():
     I0_p = normalization_current(cyl, plasma[1])
     assert(normalization_current(cyl, plasma) == approx(I0_n+I0_p))
 
-def test_OML_current_not_normalized_by_default():
+def test_OML_current_not_normalized():
     geometry = Cylinder(0.255e-3, 25e-3)
     species  = Species(n=10e10, eV=0.26)
     I1 = OML_current(geometry, species, 5)
+    assert(I1 == approx(-2.777872191401695e-07))
 
 def test_OML_current_cairns():
     sp = Species(n=1e11, T=1000, alpha=0.2)
