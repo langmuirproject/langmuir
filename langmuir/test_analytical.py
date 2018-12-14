@@ -149,7 +149,7 @@ def test_OML_current_cairns():
     assert(I == approx(-4.52743e-11))
     # Repelled particles - Cairns VDF
     I = OML_current(geo, sp_m, eta=5)
-    assert(I == approx(-4.33247e-12)
+    assert(I == approx(-4.33247e-12))
 
 def test_OML_current_kappa_cairns():
     sp = Species(n=1e11, T=1000, kappa=4.0, alpha=0.2)
