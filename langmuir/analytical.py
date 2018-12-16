@@ -32,13 +32,20 @@ def normalization_current(geometry, species):
     """
     Returns the normalization current for the given species and geometry.
     The normalization current is the current the species would have contributed
-    to a neutral probe due to random thermal movements of particles if the species
-    had been Maxwellian.
+    to a probe at zero potential with respect to the background plasma due to
+    random thermal movements of particles, if the species had been Maxwellian.
 
-    Parameters:
-    -----------
-    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
-    species   (Species, list of Species)      : plasma species
+    Parameters
+    ----------
+    geometry: Plane, Cylinder or Sphere
+        Probe geometry
+
+    species: Species or list of Species
+        Species constituting the background plasma
+
+    Returns
+    -------
+    float or float array of currents.
     """
 
     if isinstance(species, list):
@@ -65,13 +72,21 @@ def normalization_current(geometry, species):
 def thermal_current(geometry, species, normalize=False):
     """
     Returns the thermal current for the given species and geometry. The
-    thermal current is the current the species contributes to a neutral
-    probe due to random thermal movements of particles.
+    thermal current is the current the species contributes to a probe at zero
+    potential with respect to the background plasma due to random thermal
+    movements of particles.
 
-    Parameters:
-    -----------
-    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
-    species   (Species, list of Species)      : plasma species
+    Parameters
+    ----------
+    geometry: Plane, Cylinder or Sphere
+        Probe geometry
+
+    species: Species or list of Species
+        Species constituting the background plasma
+
+    Returns
+    -------
+    float or float array of currents.
     """
 
     if isinstance(species, list):
@@ -113,14 +128,37 @@ def thermal_current(geometry, species, normalize=False):
 def OML_current(geometry, species, V=None, eta=None, normalize=False):
 
     """
-    Returns the OML current.
+    Current collected by a probe according to the Orbital Motion Limited (OML)
+    theory. The model assumes a probe of infinitely small radius compared to
+    the Debye length, and for a cylindrical probe, that it is infinitely long.
+    Probes with radii up to 0.2 Debye lengths (for spherical probes) or 1.0
+    Debye lengths (for cylindrical probes) are very well approximated by this
+    theory, although the literature is diverse as to how long cylindrical probes
+    must be for this theory to be a good approximation.
 
-    Parameters:
-    -----------
-    geometry  (Plane, Cylinder, Sphere)       : geometry of the probe
-    species   (Species, list of Species)      : plasma species
-    V  (int, float, list, tuple, numpy array) : probe's biased voltage
-    normalize (bool)                          : normalize current with respect to random/thermal current, a la Laframboise
+    Parameters
+    ----------
+    geometry: Plane, Cylinder or Sphere
+        Probe geometry
+
+    species: Species or list of Species
+        Species constituting the background plasma
+
+    V: float or float array
+        Probe voltage(s) in volts
+
+    eta: float or float array
+        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
+        species' charge and temperature, k is Boltzmann's constant and V is
+        the probe voltage in volts.
+
+    normalize: bool
+        Whether or not to normalize the output current by
+        ``normalization_current()``
+
+    Returns
+    -------
+    float or float array of currents.
     """
 
     if isinstance(species, list):

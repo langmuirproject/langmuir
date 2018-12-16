@@ -29,8 +29,80 @@ from scipy.constants import value as constants
 from copy import deepcopy
 import numpy as np
 
-def finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False):
+def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
+                          table='laframboise-darian-marholm'):
+    """
+    A current model taking into account the effects of finite radius by
+    interpolating between tabulated normalized currents. The model only
+    accounts for the attracted-species currents (for which eta<0). It does
+    not extrapolate, but returns ``nan`` when the input parameters are outside
+    the domain of the model. This happens when the normalized potential for any
+    given species is less than -25, when kappa is less than 4, when alpha is
+    more than 0.2 or when the radius is more than 10 or sometimes all the way
+    up towards 100 (as the distribution approaches Maxwellain). Normally finite
+    radius effects are negligible for radii less than 0.2 Debye lengths (spheres)
+    or 1.0 Debye lengths (cylinders).
 
+    The model can be based on the following tables, as decided by the ``table``
+    parameter:
+
+    - ``'laframboise'``.
+      The de-facto standard tables for finite radius currents, tables 5c
+      and 6c in Laframboise, "Theory of Spherical and Cylindrical Langmuir
+      Probes in a Collisionless, Maxwellian Plasma at Rest", PhD Thesis.
+      Covers Maxwellian plasmas only, probe radii ranging from 0 to 100 Debye
+      lengths.
+
+    - ``'darian-marholm uncomplete'``.
+      These tables covers Maxwellian, Kappa, Cairns and Kappa-Cairns
+      distributions for radii ranging from 0.2 Debye lengths (spheres) or
+      1.0 Debye length (cylinders) up to 10 Debye lengths. They are not as
+      accurate as ``'laframboise'`` for pure the Maxwellian, but usually within
+      one or two percent.
+
+    - ``'darian-marholm'``.
+      Same as above, but this is complemented by adding analytical values from
+      OML theory, thereby extending the range of valid radii down to zero Debye
+      lengths. In addition, the values for zero potential are replaced by
+      analytical values (i.e. the thermal current), since these are amongst the
+      most inaccurate in the above, and more accurate values can be analytically
+      computed.
+
+    - ``'laframboise-darian-marholm'``.
+      This replaces the tabulated values for the Maxwellian distribution in
+      ``'darian-marholm'`` with those of Laframboise. Accordingly this table
+      produces the most accurate result available in any situation, and has the
+      widest available parameter domain, with the probe radius gradually
+      increasing from 10 towards 100 Debye lengths as the distribution
+      approaches the Maxwellian.
+
+    Parameters
+    ----------
+    geometry: Plane, Cylinder or Sphere
+        Probe geometry
+
+    species: Species or list of Species
+        Species constituting the background plasma
+
+    V: float or float array
+        Probe voltage(s) in volts
+
+    eta: float or float array
+        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
+        species' charge and temperature, k is Boltzmann's constant and V is
+        the probe voltage in volts.
+
+    normalize: bool
+        Whether or not to normalize the output current by
+        ``normalization_current()``
+
+    table: string
+        Which table to use for interpolation. See detailed description above.
+
+    Returns
+    -------
+    float or float array of currents.
+    """
     if isinstance(species, list):
         if normalize == True:
             logger.error('Cannot normalize current to more than one species')
