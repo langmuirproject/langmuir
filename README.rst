@@ -32,17 +32,12 @@ As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The p
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
-    >>> n = 1e11
-    >>> T = 1000
-    >>> r = 0.255e-3
-    >>> l = 25e-3
-
     >>> plasma = []
-    >>> plasma.append(Species('electron' , n=n, T=T))
-    >>> plasma.append(Species(amu=16, Z=1, n=n, T=T))
+    >>> plasma.append(Species('electron' , n=1e11, T=1000))
+    >>> plasma.append(Species(amu=16, Z=1, n=1e11, T=1000))
 
     >>> Vs = np.linspace(-2, 2, 100)
-    >>> Is = OML_current(Cylinder(r, l), plasma, Vs)
+    >>> Is = OML_current(Cylinder(r=0.255e-3, l=25e-3), plasma, Vs)
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
@@ -158,13 +153,37 @@ Models for collected current
 Langmuir comes with several models for the collected current. Each model is represented by a function which takes a ``geometry`` and a ``species`` argument. The ``geometry`` is one of the above probe geometries, and the ``species`` parameters is either a single ``Species`` object or a list of such if it is desirable to take into account the effect of all species in a plasma. Most models also depend on the potential of the probe with respect to the background plasma. The potential can either be specified in volts using th ``V`` argument, or in terms of normalized voltage e*V/(k*T) using the ``eta`` argument. If these are Numpy arrays, the output will be a Numpy array of collected currents. The ``normalize`` argument can be set to ``True`` to return currents in normalized quantities rather than Ampére. Below is a description of all models:
 
 - ``OML_current(geometry, species, V=None, eta=None, normalize=False)``
-  Current according to the "Orbital Motion Limited" theory. This assumes an infinitesimal probe radius compared to the Debye length, and for cylinders, infinite length. Spheres with radii less than 0.2 Debye lengths, or Cylinders with radii less than 1 Debye length is usually very well approximated as having an infinitesimal radius.
+  Current collected by a probe according to the Orbital Motion Limited (OML)
+  theory. The model assumes a probe of infinitely small radius compared to
+  the Debye length, and for a cylindrical probe, that it is infinitely long.
+  Probes with radii up to 0.2 Debye lengths (for spherical probes) or 1.0
+  Debye lengths (for cylindrical probes) are very well approximated by this
+  theory, although the literature is diverse as to how long cylindrical probes
+  must be for this theory to be a good approximation.
+
 - ``finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalize=False)``
-  This model interpolates between tabulated values by Laframboise and Darian et al. which takes into account the effect of finite radius. If radius, voltage or spectral indices are outside the convex hull of the tabulated values, ``nan`` are returned. Valid radii are 0-10 debye lengths (100 for Maxwellian), normalized voltages must be between -25 and 0 (repelled species are neglected), alpha between 0 and 0.2, and kappa no less than 4.
+  A current model taking into account the effects of finite radius by
+  interpolating between tabulated normalized currents. The model only
+  accounts for the attracted-species currents (for which eta<0). It does
+  not extrapolate, but returns ``nan`` when the input parameters are outside
+  the domain of the model. This happens when the normalized potential for any
+  given species is less than -25, when kappa is less than 4, when alpha is
+  more than 0.2 or when the radius is more than 10 or sometimes all the way
+  up towards 100 (as the distribution approaches Maxwellian). Normally finite
+  radius effects are negligible for radii less than 0.2 Debye lengths (spheres)
+  or 1.0 Debye lengths (cylinders).
+
 - ``thermal_current(geometry, species, normalize=False)``
-  This is the current absorbed by an object fixed at zero potential due to random thermal motion of particles.
+  Returns the thermal current for the given species and geometry. The
+  thermal current is the current the species contributes to a probe at zero
+  potential with respect to the background plasma due to random thermal
+  movements of particles.
+
 - ``normalization_current(geometry, species)``
-  This is the current which is used for normalizing the current from the other models. For Maxwellian this coincides with the thermal current, whereas for other distributions it is what would have been the thermal current if the particles were Maxwellian.
+  Returns the normalization current for the given species and geometry.
+  The normalization current is the current the species would have contributed
+  to a probe at zero potential with respect to the background plasma due to
+  random thermal movements of particles, if the species had been Maxwellian.
 
 As an example, the following snippet computes the normalized electron current of a probe of 3 Debye lengths radius and normalized voltage of -10::
 
