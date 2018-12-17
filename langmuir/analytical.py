@@ -258,22 +258,3 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     return I[0] if len(I)==1 else I
-
-# def current(geometry, species, V):
-
-#     if isinstance(species, list):
-#         I = 0
-#         for s in species:
-#             I += current(geometry, species, V)
-#         return I
-
-#     """
-#     if R=0:
-#         call OML function for correct distribution
-#         It should take care of geometry, attracted/repelled
-#     elif R=inf:
-#         thin sheath
-#     else:
-#         table
-#     """
-

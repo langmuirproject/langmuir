@@ -148,7 +148,7 @@ def test_OML_current_cairns():
     # Repelled particles - Cairns VDF
     I = OML_current(geo, sp, eta=5)
     assert(I == approx(-4.52743e-11))
-    # Repelled particles - Cairns VDF
+    # Repelled particles - Maxwellian VDF
     I = OML_current(geo, sp_m, eta=5)
     assert(I == approx(-4.33247e-12))
 
