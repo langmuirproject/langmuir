@@ -112,7 +112,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
             return None
         I = 0
         for s in species:
-            I += finite_radius_current(geometry, s, V, eta, table)
+            I += finite_radius_current(geometry, s, V, eta, table=table)
         return I
 
     q, m, n, T = species.q, species.m, species.n, species.T
