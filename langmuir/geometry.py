@@ -19,13 +19,32 @@ You should have received a copy of the GNU Lesser General Public License
 along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from langmuir import *
-import pytest
+from __future__ import division
 
-def test_lafr_attr_current_geometry():
-    with pytest.raises(ValueError) as e_info:
-        f = lafr_attr_current('Pentagon')
+class Plane(object):
+    """
+    A plane with specified area A [m^2]
+    """
+    def __init__(self, A):
+        self.A = A
+    def __repr__(self):
+        return "Plane(A={})".format(self.A)
 
-def test_lafr_norm_current_geometry():
-    with pytest.raises(ValueError) as e_info:
-        f = lafr_norm_current('Pentagon', 1, 1e11, 1e3)
+class Cylinder(object):
+    """
+    A cylinder with specified radius r [m] and length l [m]
+    """
+    def __init__(self, r, l):
+        self.r = r
+        self.l = l
+    def __repr__(self):
+        return "Cylinder(r={}, l={})".format(self.r, self.l)
+
+class Sphere(object):
+    """
+    A sphere with specified radius r [m]
+    """
+    def __init__(self, r):
+        self.r = r
+    def __repr__(self):
+        return "Sphere(r={})".format(self.r)
