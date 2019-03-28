@@ -28,6 +28,7 @@ from scipy.interpolate import griddata
 from scipy.constants import value as constants
 from copy import deepcopy
 import numpy as np
+import os
 
 def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
                           table='laframboise-darian-marholm'):
@@ -142,7 +143,6 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     elif isinstance(geometry, Cylinder):
         table += ' cylinder'
     else:
-        print('hei')
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye
@@ -171,3 +171,68 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
         logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
 
     return I[0] if len(I) == 1 else I
+
+def finite_length_current_density(geometry, species, z=None, zn=None,
+                                  V=None, eta=None, normalize=False):
+
+    if isinstance(species, list):
+        if normalize == True:
+            logger.error('Cannot normalize current to more than one species')
+            return None
+        if eta is not None:
+            logger.error('Cannot normalize voltage to more than one species')
+            return None
+        I = 0
+        for s in species:
+            I += finite_length_current_density(geometry, species, z=None, zn=None,
+                                               V=None, eta=None, normalize=False)
+        return I
+
+    q, m, n, T = species.q, species.m, species.n, species.T
+    kappa, alpha = species.kappa, species.alpha
+    k = constants('Boltzmann constant')
+
+    if kappa != float('inf') or alpha != 0:
+        logger.error("Finite length effect data only available for Maxwellian")
+
+    if V is not None:
+        eta = q*V/(k*T)
+
+    if z is not None:
+        zn = z/species.debye
+
+    if not isinstance(geometry, Cylinder):
+        raise ValueError('Geometry not supported: {}'.format(geometry))
+
+    ln = geometry.l/species.debye
+
+    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
+    file = np.load(fname)
+    lns = file['ls']
+    etas = file['etas']
+    vals_A = file['popts'][:,0]
+    vals_alpha = file['popts'][:,1]
+    vals_gamma = file['popts'][:,2]
+    vals_C = file['popts'][:,3]
+
+    A     = griddata((lns, etas), vals_A    , (ln, eta))
+    alpha = griddata((lns, etas), vals_alpha, (ln, eta))
+    gamma = griddata((lns, etas), vals_gamma, (ln, eta))
+    C     = griddata((lns, etas), vals_C    , (ln, eta))
+
+    def f(z):
+        return A*np.exp(-alpha*z)*(z**gamma)
+
+    def g(z, l):
+        return C+f(z)+f(l-z)
+
+    if normalize:
+        I0 = 1
+    else:
+        geonorm = deepcopy(geometry)
+        geonorm.l = 1
+        I0 = OML_current(geonorm, species, eta=eta)
+
+    I = I0*g(zn, ln)
+
+    return I
