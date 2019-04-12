@@ -173,7 +173,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     return I[0] if len(I) == 1 else I
 
 def finite_length_current_density(geometry, species, z=None, zn=None,
-                                  V=None, eta=None, normalize=False):
+                                  V=None, eta=None, normalize=None):
 
     if isinstance(species, list):
         if normalize == True:
@@ -226,7 +226,11 @@ def finite_length_current_density(geometry, species, z=None, zn=None,
     def g(z, l):
         return C+f(z)+f(l-z)
 
-    if normalize:
+    if normalize=='th':
+        geonorm = deepcopy(geometry)
+        geonorm.l = 1
+        I0 = OML_current(geonorm, species, eta=eta, normalize=True)
+    elif normalize=='OML':
         I0 = 1
     else:
         geonorm = deepcopy(geometry)
