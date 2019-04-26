@@ -4,7 +4,7 @@ from matplotlib.widgets import Slider
 from langmuir import *
 from scipy.special import erf
 
-normalize='th'
+normalize='OML'
 
 elec = Species(n=35e10, eV=0.08)
 geo = Cylinder(r=0.1*elec.debye, l=20*elec.debye)
