@@ -32,13 +32,17 @@ class Plane(object):
 
 class Cylinder(object):
     """
-    A cylinder with specified radius r [m] and length l [m]
+    A cylinder with specified radius r [m] and length l [m].
+    A cylinder can have guards on the left and right edge by specifying
+    the guard's length with lguard and rguard, respectively.
     """
-    def __init__(self, r, l):
+    def __init__(self, r, l, lguard=0, rguard=0):
         self.r = r
         self.l = l
+        self.lguard = lguard
+        self.rguard = rguard
     def __repr__(self):
-        return "Cylinder(r={}, l={})".format(self.r, self.l)
+        return "Cylinder(r={}, l={}, lguard={}, rguard={})".format(self.r, self.l, self.lguard, self.rguard)
 
 class Sphere(object):
     """

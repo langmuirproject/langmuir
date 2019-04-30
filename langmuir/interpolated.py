@@ -213,8 +213,8 @@ def finite_length_current_density(geometry, species, z=None, zn=None,
     etas = file['etas']
     vals_A = file['popts'][:,0]
     vals_alpha = file['popts'][:,1]
-    vals_gamma = file['popts'][:,2]
-    vals_C = file['popts'][:,3]
+    vals_gamma = file['popts'][:,4]
+    vals_C = file['popts'][:,5]
 
     A     = griddata((lns, etas), vals_A    , (ln, eta))
     alpha = griddata((lns, etas), vals_alpha, (ln, eta))
@@ -272,6 +272,9 @@ def finite_length_current(geometry, species, z=None, zn=None,
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     ln = geometry.l/species.debye
+    lln = geometry.lguard/species.debye
+    lrn = geometry.rguard/species.debye
+    ltn = lln + ln + lrn
 
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
     file = np.load(fname)
@@ -279,13 +282,13 @@ def finite_length_current(geometry, species, z=None, zn=None,
     etas = file['etas']
     vals_A = file['popts'][:,0]
     vals_alpha = file['popts'][:,1]
-    vals_gamma = file['popts'][:,2]
-    vals_C = file['popts'][:,3]
+    vals_gamma = file['popts'][:,4]
+    vals_C = file['popts'][:,5]
 
-    A     = griddata((lns, etas), vals_A    , (ln, eta))
-    alpha = griddata((lns, etas), vals_alpha, (ln, eta))
-    gamma = griddata((lns, etas), vals_gamma, (ln, eta))
-    C     = griddata((lns, etas), vals_C    , (ln, eta))
+    A     = griddata((lns, etas), vals_A    , (ltn, eta))
+    alpha = griddata((lns, etas), vals_alpha, (ltn, eta))
+    gamma = griddata((lns, etas), vals_gamma, (ltn, eta))
+    C     = griddata((lns, etas), vals_C    , (ltn, eta))
 
     if normalize=='th':
         geonorm = deepcopy(geometry)
@@ -298,8 +301,8 @@ def finite_length_current(geometry, species, z=None, zn=None,
         geonorm.l = 1
         I0 = OML_current(geonorm, species, eta=eta)
 
-    I = I0*species.debye*(int_additive_model(ln, ln, A, alpha, 0, 1, gamma, C)
-                         -int_additive_model(0 , ln, A, alpha, 0, 1, gamma, C))
+    I = I0*species.debye*(int_additive_model(lln+ln, ltn, A, alpha, 0, 1, gamma, C)
+                         -int_additive_model(lln   , ltn, A, alpha, 0, 1, gamma, C))
     return I
 
 def Gamma(a, x):
