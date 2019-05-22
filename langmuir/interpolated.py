@@ -173,7 +173,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
 
     return I[0] if len(I) == 1 else I
 
-def finite_length_current_density(geometry, species, z=None, zn=None,
+def finite_length_current_density(geometry, species, z=None, zeta=None,
                                   V=None, eta=None, normalize=None):
 
     if isinstance(species, list):
@@ -185,7 +185,7 @@ def finite_length_current_density(geometry, species, z=None, zn=None,
             return None
         I = 0
         for s in species:
-            I += finite_length_current_density(geometry, species, z=None, zn=None,
+            I += finite_length_current_density(geometry, species, z=None, zeta=None,
                                                V=None, eta=None, normalize=False)
         return I
 
@@ -200,32 +200,32 @@ def finite_length_current_density(geometry, species, z=None, zn=None,
         eta = q*V/(k*T)
 
     if z is not None:
-        zn = z/species.debye
+        zeta = z/species.debye
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    ln = geometry.l/species.debye
+    lambd = geometry.l/species.debye
 
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
     file = np.load(fname)
-    lns = file['ls']
+    lambds = file['ls']
     etas = file['etas']
-    vals_A = file['popts'][:,0]
-    vals_alpha = file['popts'][:,1]
-    vals_gamma = file['popts'][:,4]
-    vals_C = file['popts'][:,5]
+    As = file['popts'][:,0]
+    alphas = file['popts'][:,1]
+    gammas = file['popts'][:,4]
+    Cs = file['popts'][:,5]
 
-    A     = griddata((lns, etas), vals_A    , (ln, eta))
-    alpha = griddata((lns, etas), vals_alpha, (ln, eta))
-    gamma = griddata((lns, etas), vals_gamma, (ln, eta))
-    C     = griddata((lns, etas), vals_C    , (ln, eta))
+    A     = griddata((lambds, etas), As    , (lambd, eta))
+    alpha = griddata((lambds, etas), alphas, (lambd, eta))
+    gamma = griddata((lambds, etas), gammas, (lambd, eta))
+    C     = griddata((lambds, etas), Cs    , (lambd, eta))
 
-    def f(z):
-        return A*np.exp(-alpha*z)*(z**gamma)
+    # def f(z):
+    #     return A*np.exp(-alpha*z)*(z**gamma)
 
-    def g(z, l):
-        return C+f(z)+f(l-z)
+    # def g(z, l):
+    #     return C+f(z)+f(l-z)
 
     if normalize=='th':
         geonorm = deepcopy(geometry)
@@ -238,11 +238,12 @@ def finite_length_current_density(geometry, species, z=None, zn=None,
         geonorm.l = 1
         I0 = OML_current(geonorm, species, eta=eta)
 
-    I = I0*g(zn, ln)
+    # I = I0*g(zeta, lambd)
+    I = I0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
 
     return I
 
-def finite_length_current(geometry, species, z=None, zn=None,
+def finite_length_current(geometry, species, z=None,
                           V=None, eta=None, normalize=None):
 
     if isinstance(species, list):
@@ -254,7 +255,7 @@ def finite_length_current(geometry, species, z=None, zn=None,
             return None
         I = 0
         for s in species:
-            I += finite_length_current(geometry, species, z=None, zn=None,
+            I += finite_length_current(geometry, species, z=None,
                                        V=None, eta=None, normalize=False)
         return I
 
@@ -271,24 +272,24 @@ def finite_length_current(geometry, species, z=None, zn=None,
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    ln = geometry.l/species.debye
-    lln = geometry.lguard/species.debye
-    lrn = geometry.rguard/species.debye
-    ltn = lln + ln + lrn
+    lambd_p = geometry.l/species.debye      # Normalized probe length
+    lambd_l = geometry.lguard/species.debye # Normalized left guard length
+    lambd_r = geometry.rguard/species.debye # Normalized right guard length
+    lambd_t = lambd_l + lambd_p + lambd_r   # Normalized total length
 
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
     file = np.load(fname)
-    lns = file['ls']
+    lambds = file['ls']
     etas = file['etas']
-    vals_A = file['popts'][:,0]
-    vals_alpha = file['popts'][:,1]
-    vals_gamma = file['popts'][:,4]
-    vals_C = file['popts'][:,5]
+    As = file['popts'][:,0]
+    alphas = file['popts'][:,1]
+    gammas = file['popts'][:,4]
+    Cs = file['popts'][:,5]
 
-    A     = griddata((lns, etas), vals_A    , (ltn, eta))
-    alpha = griddata((lns, etas), vals_alpha, (ltn, eta))
-    gamma = griddata((lns, etas), vals_gamma, (ltn, eta))
-    C     = griddata((lns, etas), vals_C    , (ltn, eta))
+    A     = griddata((lambds, etas), As    , (lambd_t, eta))
+    alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
+    gamma = griddata((lambds, etas), gammas, (lambd_t, eta))
+    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
 
     if normalize=='th':
         geonorm = deepcopy(geometry)
@@ -301,8 +302,8 @@ def finite_length_current(geometry, species, z=None, zn=None,
         geonorm.l = 1
         I0 = OML_current(geonorm, species, eta=eta)
 
-    I = I0*species.debye*(int_additive_model(lln+ln, ltn, A, alpha, 0, 1, gamma, C)
-                         -int_additive_model(lln   , ltn, A, alpha, 0, 1, gamma, C))
+    I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
+                         -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))
     return I
 
 def Gamma(a, x):
