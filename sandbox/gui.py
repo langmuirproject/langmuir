@@ -9,7 +9,7 @@ normalize='OML'
 elec = Species(n=35e10, eV=0.08)
 geo = Cylinder(r=0.1*elec.debye, l=20*elec.debye)
 z = np.linspace(0, 20, 1000)
-I = finite_length_current_density(geo, elec, zn=z, eta=-25, normalize=normalize)
+I = finite_length_current_density(geo, elec, zeta=z, eta=-25, normalize=normalize)
 
 fig, ax = plt.subplots()
 plt.subplots_adjust(bottom=0.25)
@@ -24,7 +24,7 @@ plt.ylabel(r'$I/I_\mathrm{OML}$')
 
 ax_len = plt.axes([0.1, 0.10, 0.8, 0.03])
 ax_eta = plt.axes([0.1, 0.05, 0.8, 0.03])
-sl_len = Slider(ax_len, r'$l/\lambda_D$', 1.5, 100, valinit=20)
+sl_len = Slider(ax_len, r'$l/\lambda_D$', 1, 100, valinit=20)
 sl_eta = Slider(ax_eta, r'$\eta$', 2, 100, valinit=25)
 
 def update(val):
@@ -32,7 +32,7 @@ def update(val):
     l = sl_len.val
     z = np.linspace(0, l, 1000)
     geo = Cylinder(r=0.1*elec.debye, l=l*elec.debye)
-    I = finite_length_current_density(geo, elec, zn=z, eta=-eta, normalize=normalize)
+    I = finite_length_current_density(geo, elec, zeta=z, eta=-eta, normalize=normalize)
     line.set_ydata(I)
     line.set_xdata(z)
 

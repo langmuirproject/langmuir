@@ -207,19 +207,33 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
 
     lambd = geometry.l/species.debye
 
-    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
-    file = np.load(fname)
-    lambds = file['ls']
-    etas = file['etas']
-    As = file['popts'][:,0]
-    alphas = file['popts'][:,1]
-    gammas = file['popts'][:,4]
-    Cs = file['popts'][:,5]
+    # fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
+    # file = np.load(fname)
+    # lambds = file['ls']
+    # etas = file['etas']
+    # As = file['popts'][:,0]
+    # alphas = file['popts'][:,1]
+    # gammas = file['popts'][:,4]
+    # Cs = file['popts'][:,5]
 
+    # A     = griddata((lambds, etas), As    , (lambd, eta))
+    # alpha = griddata((lambds, etas), alphas, (lambd, eta))
+    # gamma = griddata((lambds, etas), gammas, (lambd, eta))
+    # C     = griddata((lambds, etas), Cs    , (lambd, eta))
+
+    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
+    file = np.load(fname)
+    lambds = file['lambds']
+    etas = file['etas']
+    Cs = file['Cs']
+    As = file['As']
+    alphas = file['alphas']
+    deltas = file['deltas']
+
+    C     = griddata((lambds, etas), Cs    , (lambd, eta))
     A     = griddata((lambds, etas), As    , (lambd, eta))
     alpha = griddata((lambds, etas), alphas, (lambd, eta))
-    gamma = griddata((lambds, etas), gammas, (lambd, eta))
-    C     = griddata((lambds, etas), Cs    , (lambd, eta))
+    delta = griddata((lambds, etas), deltas, (lambd, eta))
 
     # def f(z):
     #     return A*np.exp(-alpha*z)*(z**gamma)
@@ -239,7 +253,8 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
         I0 = OML_current(geonorm, species, eta=eta)
 
     # I = I0*g(zeta, lambd)
-    I = I0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
+    # I = I0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
+    I = I0*additive_model(zeta, lambd, C, A, alpha, delta)
 
     return I
 
@@ -277,19 +292,33 @@ def finite_length_current(geometry, species, z=None,
     lambd_r = geometry.rguard/species.debye # Normalized right guard length
     lambd_t = lambd_l + lambd_p + lambd_r   # Normalized total length
 
-    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
-    file = np.load(fname)
-    lambds = file['ls']
-    etas = file['etas']
-    As = file['popts'][:,0]
-    alphas = file['popts'][:,1]
-    gammas = file['popts'][:,4]
-    Cs = file['popts'][:,5]
+    # fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
+    # file = np.load(fname)
+    # lambds = file['ls']
+    # etas = file['etas']
+    # As = file['popts'][:,0]
+    # alphas = file['popts'][:,1]
+    # gammas = file['popts'][:,4]
+    # Cs = file['popts'][:,5]
 
+    # A     = griddata((lambds, etas), As    , (lambd_t, eta))
+    # alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
+    # gamma = griddata((lambds, etas), gammas, (lambd_t, eta))
+    # C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
+
+    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
+    file = np.load(fname)
+    lambds = file['lambds']
+    etas = file['etas']
+    Cs = file['Cs']
+    As = file['As']
+    alphas = file['alphas']
+    deltas = file['deltas']
+
+    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
     A     = griddata((lambds, etas), As    , (lambd_t, eta))
     alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
-    gamma = griddata((lambds, etas), gammas, (lambd_t, eta))
-    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
+    delta = griddata((lambds, etas), deltas, (lambd_t, eta))
 
     if normalize=='th':
         geonorm = deepcopy(geometry)
@@ -302,25 +331,41 @@ def finite_length_current(geometry, species, z=None,
         geonorm.l = 1
         I0 = OML_current(geonorm, species, eta=eta)
 
-    I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
-                         -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))
+    # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
+    #                      -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))
+
+    I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
+                         -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+
     return I
 
-def Gamma(a, x):
-    return special.gammaincc(a, x)*special.gamma(a)
+# def Gamma(a, x):
+#     return special.gammaincc(a, x)*special.gamma(a)
 
-def h(zeta, alpha, gamma):
-    return np.exp(-alpha*zeta)*(zeta**gamma)
+# def h(zeta, alpha, gamma):
+#     return np.exp(-alpha*zeta)*(zeta**gamma)
 
-# Indefinite integral of h
-def H(zeta, alpha, gamma):
-    if zeta==0: zeta=np.finfo(float).eps
-    return -(zeta**gamma)*((alpha*zeta)**(-gamma))*Gamma(1+gamma,alpha*zeta)/alpha
+# # Indefinite integral of h
+# def H(zeta, alpha, gamma):
+#     if zeta==0: zeta=np.finfo(float).eps
+#     return -(zeta**gamma)*((alpha*zeta)**(-gamma))*Gamma(1+gamma,alpha*zeta)/alpha
 
-def additive_model(zeta, lambd, A, alpha, B, beta, gamma, C):
-    return C + A*h(zeta, alpha, gamma) + B*h(zeta, beta, gamma) \
-             + A*h(lambd-zeta, alpha, gamma) + B*h(lambd-zeta, beta, gamma)
+# def additive_model(zeta, lambd, A, alpha, B, beta, gamma, C):
+#     return C + A*h(zeta, alpha, gamma) + B*h(zeta, beta, gamma) \
+#              + A*h(lambd-zeta, alpha, gamma) + B*h(lambd-zeta, beta, gamma)
 
-def int_additive_model(zeta, lambd, A, alpha, B, beta, gamma, C):
-    return C*zeta + A*H(zeta, alpha, gamma) + B*H(zeta, beta, gamma) \
-                  - A*H(lambd-zeta, alpha, gamma) - B*H(lambd-zeta, beta, gamma)
+# def int_additive_model(zeta, lambd, A, alpha, B, beta, gamma, C):
+#     return C*zeta + A*H(zeta, alpha, gamma) + B*H(zeta, beta, gamma) \
+#                   - A*H(lambd-zeta, alpha, gamma) - B*H(lambd-zeta, beta, gamma)
+
+def h(zeta, alpha, delta):
+    return (zeta-delta+1/alpha)*np.exp(-alpha*zeta)
+
+def H(zeta, alpha, delta):
+    return (alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
+
+def additive_model(zeta, lambd, C, A, alpha, delta):
+    return C * (1 + A*h(zeta, alpha, delta) + A*h(lambd-zeta, alpha, delta))
+
+def int_additive_model(zeta, lambd, C, A, alpha, delta):
+    return C * (zeta + A*H(zeta, alpha, delta) - A*H(lambd-zeta, alpha, delta))
