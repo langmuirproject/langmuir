@@ -183,11 +183,11 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
         if eta is not None:
             logger.error('Cannot normalize voltage to more than one species')
             return None
-        I = 0
+        i = 0
         for s in species:
-            I += finite_length_current_density(geometry, species, z=None, zeta=None,
+            i += finite_length_current_density(geometry, species, z=None, zeta=None,
                                                V=None, eta=None, normalize=False)
-        return I
+        return i
 
     q, m, n, T = species.q, species.m, species.n, species.T
     kappa, alpha = species.kappa, species.alpha
@@ -241,22 +241,22 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
     # def g(z, l):
     #     return C+f(z)+f(l-z)
 
-    if normalize=='th':
+    if normalize=='th': # i0 = i_th => i = i_th * g
         geonorm = deepcopy(geometry)
         geonorm.l = 1
-        I0 = OML_current(geonorm, species, eta=eta, normalize=True)
-    elif normalize=='OML':
-        I0 = 1
-    else:
+        i0 = OML_current(geonorm, species, eta=eta, normalize=True)
+    elif normalize=='OML': # i0 = 1 => i = g
+        i0 = 1
+    else: # i0 = i_OML => i = i_OML * g
         geonorm = deepcopy(geometry)
         geonorm.l = 1
-        I0 = OML_current(geonorm, species, eta=eta)
+        i0 = OML_current(geonorm, species, eta=eta)
 
-    # I = I0*g(zeta, lambd)
-    # I = I0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
-    I = I0*additive_model(zeta, lambd, C, A, alpha, delta)
+    # i = i0*g(zeta, lambd)
+    # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
+    i = i0*additive_model(zeta, lambd, C, A, alpha, delta)
 
-    return I
+    return i
 
 def finite_length_current(geometry, species, z=None,
                           V=None, eta=None, normalize=None):
@@ -320,13 +320,17 @@ def finite_length_current(geometry, species, z=None,
     alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
     delta = griddata((lambds, etas), deltas, (lambd_t, eta))
 
-    if normalize=='th':
+    if normalize=='th': # I = actual current / I_th
         geonorm = deepcopy(geometry)
         geonorm.l = 1
-        I0 = OML_current(geonorm, species, eta=eta, normalize=True)
-    elif normalize=='OML':
+        I0 = OML_current(geonorm, species, eta=eta, normalize=True)/geometry.l
+        # Notice the difference between i_th [A/m] and I_th [A]
+        # geonorm.l = 1 makes it per unit length, i.e. [A/m].
+        # Hence OML_current returns division by i_th and not I_th.
+        # To correct this we need to divide by geometry.l
+    elif normalize=='OML': # I = integral of g
         I0 = 1
-    else:
+    else: # I0 = I_OML => I = I_OML * integral of g = actual current
         geonorm = deepcopy(geometry)
         geonorm.l = 1
         I0 = OML_current(geonorm, species, eta=eta)
