@@ -205,7 +205,10 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    lambd = geometry.l/species.debye
+    lambd_p = geometry.l/species.debye      # Normalized probe length
+    lambd_l = geometry.lguard/species.debye # Normalized left guard length
+    lambd_r = geometry.rguard/species.debye # Normalized right guard length
+    lambd_t = lambd_l + lambd_p + lambd_r   # Normalized total length
 
     # fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'cache.npz')
     # file = np.load(fname)
@@ -216,10 +219,10 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
     # gammas = file['popts'][:,4]
     # Cs = file['popts'][:,5]
 
-    # A     = griddata((lambds, etas), As    , (lambd, eta))
-    # alpha = griddata((lambds, etas), alphas, (lambd, eta))
-    # gamma = griddata((lambds, etas), gammas, (lambd, eta))
-    # C     = griddata((lambds, etas), Cs    , (lambd, eta))
+    # A     = griddata((lambds, etas), As    , (lambd_t, eta))
+    # alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
+    # gamma = griddata((lambds, etas), gammas, (lambd_t, eta))
+    # C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
 
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
     file = np.load(fname)
@@ -230,10 +233,13 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
     alphas = file['alphas']
     deltas = file['deltas']
 
-    C     = griddata((lambds, etas), Cs    , (lambd, eta))
-    A     = griddata((lambds, etas), As    , (lambd, eta))
-    alpha = griddata((lambds, etas), alphas, (lambd, eta))
-    delta = griddata((lambds, etas), deltas, (lambd, eta))
+    if lambd_t > max(lambds):
+        lambd_t = max(lambds)
+
+    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
+    A     = griddata((lambds, etas), As    , (lambd_t, eta))
+    alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
+    delta = griddata((lambds, etas), deltas, (lambd_t, eta))
 
     # def f(z):
     #     return A*np.exp(-alpha*z)*(z**gamma)
@@ -252,9 +258,12 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
         geonorm.l = 1
         i0 = OML_current(geonorm, species, eta=eta)
 
-    # i = i0*g(zeta, lambd)
-    # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
-    i = i0*additive_model(zeta, lambd, C, A, alpha, delta)
+    if lambd_l==float('inf'):
+        i = i0*additive_model_noleft(zeta, lambd_p+lambd_r, C, A, alpha, delta)
+    else:
+        # i = i0*g(zeta, lambd)
+        # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
+        i = i0*additive_model(lambd_l+zeta, lambd_t, C, A, alpha, delta)
 
     return i
 
@@ -315,6 +324,9 @@ def finite_length_current(geometry, species, z=None,
     alphas = file['alphas']
     deltas = file['deltas']
 
+    if lambd_t > max(lambds):
+        lambd_t = max(lambds)
+
     C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
     A     = griddata((lambds, etas), As    , (lambd_t, eta))
     alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
@@ -338,8 +350,12 @@ def finite_length_current(geometry, species, z=None,
     # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
     #                      -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))
 
-    I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
-                         -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+    if lambd_l==float('inf'):
+        I = I0*species.debye*(int_additive_model_noleft(lambd_p, lambd_p+lambd_r, C, A, alpha, delta)
+                             -int_additive_model_noleft(0      , lambd_p+lambd_r, C, A, alpha, delta))
+    else:
+        I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
+                             -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
 
     return I
 
@@ -371,5 +387,11 @@ def H(zeta, alpha, delta):
 def additive_model(zeta, lambd, C, A, alpha, delta):
     return C * (1 + A*h(zeta, alpha, delta) + A*h(lambd-zeta, alpha, delta))
 
+def additive_model_noleft(zeta, lambd, C, A, alpha, delta):
+    return C * (1 + A*h(lambd-zeta, alpha, delta))
+
 def int_additive_model(zeta, lambd, C, A, alpha, delta):
     return C * (zeta + A*H(zeta, alpha, delta) - A*H(lambd-zeta, alpha, delta))
+
+def int_additive_model_noleft(zeta, lambd, C, A, alpha, delta):
+    return C * (zeta - A*H(lambd-zeta, alpha, delta))
