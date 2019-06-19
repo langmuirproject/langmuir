@@ -25,7 +25,7 @@ plt.ylabel(r'$I/I_\mathrm{OML}$')
 ax_len = plt.axes([0.1, 0.10, 0.8, 0.03])
 ax_eta = plt.axes([0.1, 0.05, 0.8, 0.03])
 sl_len = Slider(ax_len, r'$l/\lambda_D$', 1, 100, valinit=20)
-sl_eta = Slider(ax_eta, r'$\eta$', 2, 100, valinit=25)
+sl_eta = Slider(ax_eta, r'$\eta$', 0, 100, valinit=25)
 
 def update(val):
     eta = sl_eta.val
