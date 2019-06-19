@@ -91,7 +91,7 @@ beta = popt[1]
 i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalize='OML')
 ax.fill_between(zeta_p, i, color=color, alpha=alpha, lw=0)
 line, = ax.plot(zeta_p, i, lw=lw,
-                label='$\\lambda_g=\\infty, \\beta={:.2f}$'.format(beta),
+                label='$\\lambda_g\\rightarrow\\infty, \\beta={:.2f}$'.format(beta),
                 marker=markers[2], markersize=ms, markevery=(1000,1000))
 i = finite_length_current_density(geo, elec, zeta=zeta_n, eta=-10, normalize='OML')
 ax.plot(zeta_n, i, ':', color=line.get_color(), lw=lw)
