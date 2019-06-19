@@ -233,13 +233,12 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
     alphas = file['alphas']
     deltas = file['deltas']
 
-    if lambd_t > max(lambds):
-        lambd_t = max(lambds)
+    lambd_coeff = min(lambd_t, max(lambds))
 
-    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
-    A     = griddata((lambds, etas), As    , (lambd_t, eta))
-    alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
-    delta = griddata((lambds, etas), deltas, (lambd_t, eta))
+    C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
+    A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
+    alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
+    delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
 
     # def f(z):
     #     return A*np.exp(-alpha*z)*(z**gamma)
@@ -324,13 +323,12 @@ def finite_length_current(geometry, species, z=None,
     alphas = file['alphas']
     deltas = file['deltas']
 
-    if lambd_t > max(lambds):
-        lambd_t = max(lambds)
+    lambd_coeff = min(lambd_t, max(lambds))
 
-    C     = griddata((lambds, etas), Cs    , (lambd_t, eta))
-    A     = griddata((lambds, etas), As    , (lambd_t, eta))
-    alpha = griddata((lambds, etas), alphas, (lambd_t, eta))
-    delta = griddata((lambds, etas), deltas, (lambd_t, eta))
+    C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
+    A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
+    alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
+    delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
 
     if normalize=='th': # I = actual current / I_th
         geonorm = deepcopy(geometry)
