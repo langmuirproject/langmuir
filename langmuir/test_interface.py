@@ -46,7 +46,7 @@ def test_multiple_species(current, electron, proton):
 
     # Add a voltage for those models having a V argument.
     # This must be small to not make repelled current negligible.
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
@@ -62,7 +62,7 @@ def test_normalize(current, electron):
 
     if current != normalization_current:
 
-        args = inspect.getargspec(current).args
+        args = inspect.getfullargspec(current).args
         kwargs = {}
         if 'V' in args: kwargs['V'] = 0.1
 
@@ -75,7 +75,7 @@ def test_normalize(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_eta(current, electron):
 
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     kwargs = {}
     if 'V' in args or 'eta' in args:
 
@@ -96,7 +96,7 @@ def test_eta(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species_eta(current, electron, proton, caplog):
 
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     if 'eta' in args:
 
         I = current(Sphere(electron.debye), [electron, proton], eta=1)
@@ -105,7 +105,7 @@ def test_multiple_species_eta(current, electron, proton, caplog):
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species_normalize(current, electron, proton, caplog):
 
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
     if 'normalize' in args:
@@ -117,7 +117,7 @@ def test_multiple_species_normalize(current, electron, proton, caplog):
 @pytest.mark.parametrize("current", current_models)
 def test_input_output_format(current, electron):
 
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     if 'V' in args:
 
         I = current(Sphere(electron.debye), electron, 0.1)
@@ -139,7 +139,7 @@ def test_input_output_format(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_geometry_error(current, electron):
 
-    args = inspect.getargspec(current).args
+    args = inspect.getfullargspec(current).args
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
