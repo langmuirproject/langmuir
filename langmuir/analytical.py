@@ -179,9 +179,11 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     k = constants('Boltzmann constant')
 
     if V is not None:
+        eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
         eta = q*V/(k*T)
     else:
+        eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
     eta = deepcopy(eta) # Prevents this function from changing eta in caller
@@ -257,4 +259,4 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    return I[0] if len(I)==1 else I
+    return I if eta_isarray else I[0]

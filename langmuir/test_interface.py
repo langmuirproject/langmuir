@@ -55,12 +55,12 @@ def test_multiple_species(current, electron, proton):
     if 'V' in args: kwargs['V'] = 0.1
 
     # geo = Sphere(electron.debye)
-    geo = Cylinder(electron.debye, 0.1*electron.debye)
+    geo = Cylinder(electron.debye, 10*electron.debye)
     Ie = current(geo, electron, **kwargs)
     Ii = current(geo, proton, **kwargs)
     I  = current(geo, [electron, proton], **kwargs)
 
-    assert(Ie+Ii == approx(I))
+    assert Ie+Ii == approx(I)
 
 @pytest.mark.parametrize("current", current_models)
 def test_normalize(current, electron):
@@ -75,7 +75,7 @@ def test_normalize(current, electron):
         I  = current(Sphere(electron.debye), electron, **kwargs)
         I0 = normalization_current(Sphere(electron.debye), electron)
 
-        assert(I0*In == approx(I))
+        assert I0*In == approx(I)
 
 @pytest.mark.parametrize("current", current_models)
 def test_eta(current, electron):

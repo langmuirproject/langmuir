@@ -106,15 +106,10 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
 
     lambd_coeff = min(lambd_t, max(lambds))
 
-    print("ETA: {}".format(eta.shape))
-
     C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
     A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
     alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
     delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
-
-    print("ETA: {}, C: {}".format(eta.shape, C.shape))
-    print(C)
 
     # def f(z):
     #     return A*np.exp(-alpha*z)*(z**gamma)
@@ -142,6 +137,13 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
 
     # return i
     # return i[0] if len(i) == 1 else i
+
+    # Making repelled species equal to OML
+    ind = np.where(eta>=0)[0]
+    C[ind] = 1
+    A[ind] = 0
+    alpha[ind] = 1
+    delta[ind] = 1
 
     def h(zeta):
         """
@@ -269,7 +271,7 @@ def finite_length_current(geometry, species,
         # Hence OML_current returns division by i_th and not I_th.
         # To correct this we need to divide by geometry.l
     elif normalize=='OML': # I = integral of g
-        I0 = 1/geometry.l
+        I0 = (1/geometry.l)*np.ones_like(eta)
     else: # I0 = I_OML => I = I_OML * integral of g = actual current
         geonorm = deepcopy(geometry)
         geonorm.l = 1
@@ -287,6 +289,12 @@ def finite_length_current(geometry, species,
 
     # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
     #                      -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+
+    ind = np.where(eta>=0)[0]
+    C[ind] = 1
+    A[ind] = 0
+    alpha[ind] = 1
+    delta[ind] = 1
 
     def H(zeta):
         if zeta==float('inf'): return np.zeros_like(alpha)
@@ -317,30 +325,30 @@ def finite_length_current(geometry, species,
 #     return C*zeta + A*H(zeta, alpha, gamma) + B*H(zeta, beta, gamma) \
 #                   - A*H(lambd-zeta, alpha, gamma) - B*H(lambd-zeta, beta, gamma)
 
-def h(zeta, alpha, delta):
-    res = np.zeros((len(alpha), len(zeta)))
-    ind = np.where(zeta!=np.inf)[0] # res=0 where zeta=inf
-    zeta = zeta[ind]
-    res[:,ind] = (zeta-delta+alpha**(-1))*np.exp(-alpha*zeta)
-    return res
+# def h(zeta, alpha, delta):
+#     res = np.zeros((len(alpha), len(zeta)))
+#     ind = np.where(zeta!=np.inf)[0] # res=0 where zeta=inf
+#     zeta = zeta[ind]
+#     res[:,ind] = (zeta-delta+alpha**(-1))*np.exp(-alpha*zeta)
+#     return res
 
 # def H(zeta, alpha, delta):
 #     res = np.zeros_like(alpha)
 #     ind = np.where(zeta!=np.inf)[0]
 
-def H(zeta, alpha, delta):
-    if zeta==float('inf'): return np.zeros_like(alpha)
-    return (alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
+# def H(zeta, alpha, delta):
+#     if zeta==float('inf'): return np.zeros_like(alpha)
+#     return (alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
 
-def additive_model(zeta, lambd, C, A, alpha, delta):
-    return C * (1 + A*h(zeta, alpha, delta) + A*h(lambd-zeta, alpha, delta))
+# def additive_model(zeta, lambd, C, A, alpha, delta):
+#     return C * (1 + A*h(zeta, alpha, delta) + A*h(lambd-zeta, alpha, delta))
 
 # def additive_model_noleft(zeta, lambd, C, A, alpha, delta):
 #     return C * (1 + A*h(lambd-zeta, alpha, delta))
 
-def int_additive_model(zeta, lambd, C, A, alpha, delta):
-    print("zeta={}, labmda={}".format(zeta, lambd))
-    return C * (zeta + A*H(zeta, alpha, delta) - A*H(lambd-zeta, alpha, delta))
+# def int_additive_model(zeta, lambd, C, A, alpha, delta):
+#     print("zeta={}, labmda={}".format(zeta, lambd))
+#     return C * (zeta + A*H(zeta, alpha, delta) - A*H(lambd-zeta, alpha, delta))
 
 # def int_additive_model_noleft(zeta, lambd, C, A, alpha, delta):
 #     return C * (zeta - A*H(lambd-zeta, alpha, delta))

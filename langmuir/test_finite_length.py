@@ -225,3 +225,7 @@ def test_finite_length_density_interpolated_samples():
         geo = Cylinder(r=r, l=l)
         I = finite_length_current_density(geo, elec, eta=-eta, z=zs*l)
         assert np.allclose(I, If)
+
+# test-todos:
+# - repelled species
+# - matrix output of density
