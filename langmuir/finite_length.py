@@ -31,14 +31,17 @@ import numpy as np
 import os
 
 def finite_length_current_density(geometry, species, V=None, eta=None,
-                                  z=None, zeta=None, normalize=None):
+                                  z=None, zeta=None, normalization=None):
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
             logger.error('Cannot normalize voltage to more than one species')
+            return None
+        if zeta is not None:
+            logger.error('Cannot normalize position to more than one species')
             return None
         i = 0
         for s in species:
@@ -52,6 +55,9 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
     if kappa != float('inf') or alpha != 0:
         logger.error("Finite length effect data only available for Maxwellian")
 
+    if isinstance(eta, np.ndarray):
+        print(type(eta), eta.dtype, eta.shape)
+
     if V is not None:
         eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
@@ -59,6 +65,9 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
     else:
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
+
+    if isinstance(eta, np.ndarray):
+        print(type(eta), eta.dtype, eta.shape)
 
     eta = eta[:, None] # Make eta rows
 
@@ -117,16 +126,19 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
     # def g(z, l):
     #     return C+f(z)+f(l-z)
 
-    if normalize=='th': # i0 = i_th => i = i_th * g
-        geonorm = deepcopy(geometry)
-        geonorm.l = 1
-        i0 = OML_current(geonorm, species, eta=eta, normalize=True)
-    elif normalize=='OML': # i0 = 1 => i = g
-        i0 = 1
-    else: # i0 = i_OML => i = i_OML * g
+    if normalization is None: # i0 = i_OML => i = i_OML * g
         geonorm = deepcopy(geometry)
         geonorm.l = 1
         i0 = OML_current(geonorm, species, eta=eta)
+    elif normalization.lower() in ['th', 'thmax']: # i0 = i_th => i = i_th * g
+        geonorm = deepcopy(geometry)
+        geonorm.l = 1
+        i0 = OML_current(geonorm, species, eta=eta, normalization='th')
+    elif normalization.lower()=='oml': # i0 = 1 => i = g
+        i0 = 1
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
+
 
     # if lambd_l==float('inf'):
     #     i = i0*additive_model_noleft(zeta, lambd_p+lambd_r, C, A, alpha, delta)
@@ -194,10 +206,10 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
             return i[0][0]
 
 def finite_length_current(geometry, species,
-                          V=None, eta=None, normalize=None):
+                          V=None, eta=None, normalization=None):
 
     if isinstance(species, list):
-        if normalize not in (False, None):
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -214,9 +226,6 @@ def finite_length_current(geometry, species,
 
     if kappa != float('inf') or alpha != 0:
         logger.error("Finite length effect data only available for Maxwellian")
-
-    # if V is not None:
-    #     eta = q*V/(k*T)
 
     if V is not None:
         V = make_array(V)
@@ -262,20 +271,22 @@ def finite_length_current(geometry, species,
     alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
     delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
 
-    if normalize=='th': # I = actual current / I_th
+    if normalization is None: # I0 = I_OML => I = I_OML * integral of g = actual current
         geonorm = deepcopy(geometry)
         geonorm.l = 1
-        I0 = OML_current(geonorm, species, eta=eta, normalize=True)/geometry.l
+        I0 = OML_current(geonorm, species, eta=eta)
+    elif normalization.lower() in ['th', 'thmax']: # I = actual current / I_th
+        geonorm = deepcopy(geometry)
+        geonorm.l = 1
+        I0 = OML_current(geonorm, species, eta=eta, normalization='th')/geometry.l
         # Notice the difference between i_th [A/m] and I_th [A]
         # geonorm.l = 1 makes it per unit length, i.e. [A/m].
         # Hence OML_current returns division by i_th and not I_th.
         # To correct this we need to divide by geometry.l
-    elif normalize=='OML': # I = integral of g
+    elif normalization.lower()=='oml': # I = integral of g
         I0 = (1/geometry.l)*np.ones_like(eta)
-    else: # I0 = I_OML => I = I_OML * integral of g = actual current
-        geonorm = deepcopy(geometry)
-        geonorm.l = 1
-        I0 = OML_current(geonorm, species, eta=eta)
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
     #                      -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))

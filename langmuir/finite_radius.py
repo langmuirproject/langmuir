@@ -31,7 +31,7 @@ import scipy.special as special
 import numpy as np
 import os
 
-def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
+def finite_radius_current(geometry, species, V=None, eta=None, normalization=None,
                           table='laframboise-darian-marholm'):
     """
     A current model taking into account the effects of finite radius by
@@ -94,7 +94,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
         species' charge and temperature, k is Boltzmann's constant and V is
         the probe voltage in volts.
 
-    normalize: bool
+    normalization: bool
         Whether or not to normalize the output current by
         ``normalization_current()``
 
@@ -106,7 +106,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     float or float array of currents.
     """
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -134,10 +134,18 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
-    if normalize:
-        I0 = 1
-    else:
+    if normalization is None:
         I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
+        I0 = 1
+    elif normalization.lower() == 'th':
+        I0 = normalization_current(geometry, species)/\
+             thermal_current(geometry, species)
+    elif normalization.lower() == 'oml':
+        I0 = normalization_current(geometry, species)/\
+             OML_current(geometry, species, eta=eta)
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
         table += ' sphere'

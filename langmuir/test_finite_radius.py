@@ -33,12 +33,12 @@ def electron():
 
 def test_laframboise_sphere(electron):
     I = finite_radius_current(Sphere(electron.debye), electron, eta=-0.6,
-                              normalize=True, table='laframboise')
+                              normalization='thmax', table='laframboise')
     assert(I == approx(1.595))
 
 def test_laframboise_cylinder(electron):
     I = finite_radius_current(Cylinder(3*electron.debye, 1), electron, eta=-2.0,
-                              normalize=True, table='laframboise')
+                              normalization='thmax', table='laframboise')
     assert(I == approx(1.928))
 
 def test_darian_marholm_uncomplete_sphere(electron):
@@ -46,7 +46,7 @@ def test_darian_marholm_uncomplete_sphere(electron):
     def curr(kappa, alpha):
         sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
         return finite_radius_current(Sphere(2*sp.debye), sp, eta=-1,
-                                     normalize=True,
+                                     normalization='thmax',
                                      table='darian-marholm uncomplete')
 
     # Testing one element for each alpha/kappa table
@@ -59,7 +59,7 @@ def test_darian_marholm_uncomplete_sphere(electron):
 
     # Testing that V=0 is the inaccurate one and that R=0 doesn't exist
     I = finite_radius_current(Sphere(0.2*electron.debye), electron, 0,
-                              normalize=True, table='darian-marholm uncomplete')
+                              normalization='thmax', table='darian-marholm uncomplete')
     assert(I == approx(0.965))
 
 def test_darian_marholm_sphere(electron):
@@ -67,17 +67,17 @@ def test_darian_marholm_sphere(electron):
     # Testing one from the uncomplete subset
     sp = Species(n=1e11, T=1000, kappa=6)
     I = finite_radius_current(Sphere(2*sp.debye), sp, eta=-1,
-                              normalize=True, table='darian-marholm')
+                              normalization='thmax', table='darian-marholm')
     assert(I == approx(1.982))
 
     # Testing that V=0 is the accurate one (not the one from uncomplete)
     I = finite_radius_current(Sphere(0.2*electron.debye), electron, eta=0,
-                              normalize=True)
+                              normalization='thmax')
     assert(I == approx(1.0))
 
     # Testing that R=0 exists
     I = finite_radius_current(Sphere(0), electron, eta=-3,
-                              normalize=True, table='darian-marholm')
+                              normalization='thmax', table='darian-marholm')
     assert(I == approx(4.0))
 
 def test_darian_marholm_uncomplete_cylinder(electron):
@@ -85,7 +85,7 @@ def test_darian_marholm_uncomplete_cylinder(electron):
     def curr(kappa, alpha):
         sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
         return finite_radius_current(Cylinder(3*sp.debye, 1), sp, eta=-1,
-                                     normalize=True,
+                                     normalization='thmax',
                                      table='darian-marholm uncomplete')
 
     assert(curr(float('inf'), 0  ) == approx(1.538))
@@ -97,7 +97,7 @@ def test_darian_marholm_uncomplete_cylinder(electron):
 
     # Testing that V=0 is the inaccurate one and that R=0 doesn't exist
     I = finite_radius_current(Cylinder(1.0*electron.debye, 1), electron, 0,
-                              normalize=True, table='darian-marholm uncomplete')
+                              normalization='thmax', table='darian-marholm uncomplete')
     assert(I == approx(0.974))
 
 def test_darian_marholm_cylinder(electron):
@@ -105,17 +105,17 @@ def test_darian_marholm_cylinder(electron):
     # Testing one from the uncomplete subset
     sp = Species(n=1e11, T=1000, kappa=6)
     I = finite_radius_current(Cylinder(3*sp.debye, 1), sp, eta=-1,
-                              normalize=True, table='darian-marholm')
+                              normalization='thmax', table='darian-marholm')
     assert(I == approx(1.509))
 
     # Testing that V=0 is the accurate one (not the one from uncomplete)
     I = finite_radius_current(Cylinder(electron.debye, 1), electron, eta=0,
-                              normalize=True)
+                              normalization='thmax')
     assert(I == approx(1.0))
 
     # Testing that R=0 exists
     I = finite_radius_current(Cylinder(0,1), electron, eta=-3,
-                              normalize=True, table='darian-marholm')
+                              normalization='thmax', table='darian-marholm')
     assert(I == approx(2.2417, 1e-3))
 
 def test_laframboise_darian_marholm_sphere(electron):
@@ -123,12 +123,12 @@ def test_laframboise_darian_marholm_sphere(electron):
     # Testing one from each of Darian-Marholm and Laframboise
 
     sp = Species(n=1e11, T=1000, kappa=4, alpha=0.2)
-    I = finite_radius_current(Sphere(3*sp.debye), sp, eta=-5, normalize=True,
+    I = finite_radius_current(Sphere(3*sp.debye), sp, eta=-5, normalization='thmax',
                               table='laframboise-darian-marholm')
     assert(I == approx(4.535))
 
     I = finite_radius_current(Sphere(3*electron.debye), electron, eta=-5,
-                              normalize=True,
+                              normalization='thmax',
                               table='laframboise-darian-marholm')
     assert(I == approx(4.640))
 
@@ -137,12 +137,12 @@ def test_laframboise_darian_marholm_cylinder(electron):
     # Testing one from each of Darian-Marholm and Laframboise
     sp = Species(n=1e11, T=1000, kappa=4, alpha=0.2)
     I = finite_radius_current(Cylinder(3*sp.debye, 1), sp, eta=-5,
-                              normalize=True,
+                              normalization='thmax',
                               table='laframboise-darian-marholm')
     assert(I == approx(3.465))
 
     I = finite_radius_current(Cylinder(3*electron.debye, 1), electron, eta=-5,
-                              normalize=True,
+                              normalization='thmax',
                               table='laframboise-darian-marholm')
     assert(I == approx(2.701))
 

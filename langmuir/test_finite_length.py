@@ -32,51 +32,51 @@ def electron():
 def eta_fl():
     return np.array([2, 10, 17, 25, 32, 50, 75, 100], dtype=np.float)
 
-def test_finite_length_normalize_OML(electron, eta_fl):
+def test_current_normalize_OML(electron, eta_fl):
 
     geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
-    g = finite_length_current(geo, electron, eta=-eta_fl, normalize='OML')
+    g = finite_length_current(geo, electron, eta=-eta_fl, normalization='OML')
     I = finite_length_current(geo, electron, eta=-eta_fl)
     I0 = OML_current(geo, electron, eta=-eta_fl)
 
     assert np.allclose(g, I/I0)
 
-def test_finite_length_normalize_th(electron, eta_fl):
+def test_current_normalize_th(electron, eta_fl):
 
     geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
-    g = finite_length_current(geo, electron, eta=-eta_fl, normalize='th')
+    g = finite_length_current(geo, electron, eta=-eta_fl, normalization='th')
     I = finite_length_current(geo, electron, eta=-eta_fl)
     I0 = thermal_current(geo, electron)
 
     assert np.allclose(g, I/I0)
 
-def test_finite_length_density_normalize_OML(electron, eta_fl):
+def test_current_density_normalize_OML(electron, eta_fl):
 
     geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
     geonorm = Cylinder(r=0.1*electron.debye, l=1)
     zeta = np.linspace(1,10,10)
     for eta in eta_fl:
-        g = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta, normalize='OML')
+        g = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta, normalization='OML')
         i = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta)
         i0 = OML_current(geonorm, electron, eta=-eta)
         gf = i/i0
 
         assert np.allclose(g, gf)
 
-def test_finite_length_density_normalize_th(electron, eta_fl):
+def test_current_density_normalize_th(electron, eta_fl):
 
     geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
     geonorm = Cylinder(r=0.1*electron.debye, l=1)
     zeta = np.linspace(1,10,10)
     for eta in eta_fl:
-        g = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta, normalize='th')
+        g = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta, normalization='th')
         i = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta)
         i0 = thermal_current(geonorm, electron)
         gf = i/i0
 
         assert np.allclose(g, gf)
 
-def test_finite_length_vs_OML(electron):
+def test_current_vs_OML(electron):
 
     # Agrees to within 5% of OML for infinite probes
 
@@ -84,10 +84,10 @@ def test_finite_length_vs_OML(electron):
                   # lguard=float('inf'), rguard=500*electron.debye)
                   lguard=float('inf'), rguard=float('inf'))
     for eta in [2, 6, 10, 17, 25, 32, 50, 75, 100]:
-        I = finite_length_current(geo, electron, eta=-eta, normalize='OML')
+        I = finite_length_current(geo, electron, eta=-eta, normalization='OML')
         assert np.allclose(I, 1, 0.05, 0), "eta={}".format(-eta)
 
-def test_finite_length_density_vs_OML(electron):
+def test_current_density_vs_OML(electron):
 
     # Agrees to within 5% of OML for infinite probes
 
@@ -98,7 +98,7 @@ def test_finite_length_density_vs_OML(electron):
         I_fl = finite_length_current_density(geo, electron, eta=-eta, z=0.5)
         assert I_OML == approx(I_fl, 0.05), "eta={}".format(-eta)
 
-def test_finite_length_guard(electron):
+def test_current_guard(electron):
 
     r = electron.debye
     l = 10*electron.debye
@@ -121,7 +121,7 @@ def test_finite_length_guard(electron):
     Ilong = finite_length_current(Cylinder(r, l, lguard=l, rguard=long), electron, eta=-eta)
     assert Iinf == approx(Ilong)
 
-def test_finite_length_density_guard(electron):
+def test_current_density_guard(electron):
 
     r = electron.debye
     l = 10*electron.debye
@@ -144,7 +144,7 @@ def test_finite_length_density_guard(electron):
     Ilong = finite_length_current_density(Cylinder(r, l, lguard=l, rguard=long), electron, eta=-eta)
     assert Iinf == approx(Ilong)
 
-def test_finite_length_samples():
+def test_current_samples():
 
     # Testing that a few random sample points don't change. All points are in
     # the original data, so the test should be independent of interpolation
@@ -165,7 +165,7 @@ def test_finite_length_samples():
         I = finite_length_current(geo, elec, eta=-eta)
         assert I == approx(If)
 
-def test_finite_length_density_samples():
+def test_current_density_samples():
 
     # Testing that a few random sample points don't change. All points are in
     # the original data, so the test should be independent of interpolation
@@ -187,7 +187,7 @@ def test_finite_length_density_samples():
         I = finite_length_current_density(geo, elec, eta=-eta, z=zs*l)
         assert np.allclose(I, If)
 
-def test_finite_length_interpolated_samples():
+def test_current_interpolated_samples():
 
     # Testing that a few random sample points don't change. These points depen
     # upon the interpolation scheme. 
@@ -206,7 +206,7 @@ def test_finite_length_interpolated_samples():
         I = finite_length_current(geo, elec, eta=-eta)
         assert I == approx(If)
 
-def test_finite_length_density_interpolated_samples():
+def test_current_density_interpolated_samples():
 
     # Testing that a few random sample points don't change. These points depen
     # upon the interpolation scheme. 
@@ -226,6 +226,46 @@ def test_finite_length_density_interpolated_samples():
         I = finite_length_current_density(geo, elec, eta=-eta, z=zs*l)
         assert np.allclose(I, If)
 
-# test-todos:
-# - repelled species
-# - matrix output of density
+def test_current_non_maxwellian(caplog):
+
+    elec = Species(n=35e10, eV=0.08)
+    geo = Cylinder(0.1*elec.debye, 10*elec.debye)
+    I = finite_length_current(geo, Species(n=35e10, T=1000, alpha=0.3), 3.0)
+    I = finite_length_current(geo, Species(n=35e10, T=1000, kappa=5), 3.0)
+
+    assert(len(caplog.records) == 2)
+
+def test_current_density_non_maxwellian(caplog):
+
+    elec = Species(n=35e10, eV=0.08)
+    geo = Cylinder(0.1*elec.debye, 10*elec.debye)
+    I = finite_length_current_density(geo, Species(n=35e10, T=1000, alpha=0.3), 3.0)
+    I = finite_length_current_density(geo, Species(n=35e10, T=1000, kappa=5), 3.0)
+
+    assert(len(caplog.records) == 2)
+
+def test_current_density_matrix(electron):
+
+    geo = Cylinder(0.1*electron.debye, 10*electron.debye)
+    eta = np.array([-1, 0, 1, 10])
+    zeta = np.linspace(0, 10, 8)
+    I_matrix = finite_length_current_density(geo, electron, eta=-eta, zeta=zeta)
+    for i, e in enumerate(eta):
+        I_row = finite_length_current_density(geo, electron, eta=-e, zeta=zeta)
+        assert np.allclose(I_row, I_matrix[i])
+
+def test_current_repelled(electron):
+
+    geo = Cylinder(0.1*electron.debye, electron.debye)
+    V = -np.array([0.1, 1.2, 56])
+    I = finite_length_current(geo, electron, V)
+    I_OML = OML_current(geo, electron, V)
+    assert np.allclose(I, I_OML)
+
+def test_current_density_repelled(electron):
+
+    geo = Cylinder(0.1*electron.debye, 1)
+    V = -np.array([0.1, 1.2, 56])
+    I = finite_length_current_density(geo, electron, V)
+    I_OML = OML_current(geo, electron, V)
+    assert np.allclose(I, I_OML)

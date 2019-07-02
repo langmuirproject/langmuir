@@ -26,8 +26,6 @@ import pytest
 import inspect
 from scipy.constants import value as constants
 
-
-
 current_models = [
     thermal_current,
     normalization_current,
@@ -63,7 +61,7 @@ def test_multiple_species(current, electron, proton):
     assert Ie+Ii == approx(I)
 
 @pytest.mark.parametrize("current", current_models)
-def test_normalize(current, electron):
+def test_normalization_thmax(current, electron):
 
     if current != normalization_current:
 
@@ -71,9 +69,42 @@ def test_normalize(current, electron):
         kwargs = {}
         if 'V' in args: kwargs['V'] = 0.1
 
-        In = current(Sphere(electron.debye), electron, normalize=True, **kwargs)
-        I  = current(Sphere(electron.debye), electron, **kwargs)
-        I0 = normalization_current(Sphere(electron.debye), electron)
+        geo = Cylinder(0.1*electron.debye, 1)
+        In = current(geo, electron, normalization='thmax', **kwargs)
+        I  = current(geo, electron, **kwargs)
+        I0 = normalization_current(geo, electron)
+
+        assert I0*In == approx(I)
+
+@pytest.mark.parametrize("current", current_models)
+def test_normalization_th(current, electron):
+
+    if current not in [normalization_current, thermal_current]:
+
+        args = inspect.getfullargspec(current).args
+        kwargs = {}
+        if 'V' in args: kwargs['V'] = 0.1
+
+        geo = Cylinder(0.1*electron.debye, 1)
+        In = current(geo, electron, normalization='th', **kwargs)
+        I  = current(geo, electron, **kwargs)
+        I0 = thermal_current(geo, electron)
+
+        assert I0*In == approx(I)
+
+@pytest.mark.parametrize("current", current_models)
+def test_normalization_oml(current, electron):
+
+    if current not in [normalization_current, thermal_current, OML_current]:
+
+        args = inspect.getfullargspec(current).args
+        kwargs = {}
+        if 'V' in args: kwargs['V'] = 0.1
+
+        geo = Cylinder(0.1*electron.debye, 1)
+        In = current(geo, electron, normalization='oml', **kwargs)
+        I  = current(geo, electron, **kwargs)
+        I0 = OML_current(geo, electron, 0.1)
 
         assert I0*In == approx(I)
 
@@ -113,11 +144,24 @@ def test_multiple_species_normalize(current, electron, proton, caplog):
 
     args = inspect.getfullargspec(current).args
     kwargs = {}
+    geometry = Cylinder(r=electron.debye, l=10*electron.debye)
     if 'V' in args: kwargs['V'] = 0.1
-    if 'normalize' in args:
+    if 'normalization' in args:
 
-        I = current(Sphere(electron.debye), [electron, proton],
-                    normalize=True, **kwargs)
+        I = current(geometry, [electron, proton],
+                    normalization='thmax', **kwargs)
+        assert(caplog.records[0].levelname == 'ERROR')
+
+@pytest.mark.parametrize("current", current_models)
+def test_multiple_species_zeta(current, electron, proton, caplog):
+
+    args = inspect.getfullargspec(current).args
+    kwargs = {}
+    geometry = Cylinder(r=electron.debye, l=10*electron.debye)
+    if 'V' in args: kwargs['V'] = 0.1
+    if 'zeta' in args:
+
+        I = current(geometry, [electron, proton], zeta=39, **kwargs)
         assert(caplog.records[0].levelname == 'ERROR')
 
 @pytest.mark.parametrize("current", current_models)
@@ -156,7 +200,20 @@ def test_geometry_error(current, electron):
     # normalization current, which means to test the
     # current function's own fail guard you must not
     # use the normalization current.
-    if 'normalize' in args: kwargs['normalize'] = True
+    if 'normalization' in args: kwargs['normalization'] = 'thmax'
 
     with pytest.raises(ValueError):
         current('Bullshit', electron, **kwargs)
+
+@pytest.mark.parametrize("current", current_models)
+def test_normalization_error(current, electron):
+
+    args = inspect.getfullargspec(current).args
+    kwargs = {}
+    if 'eta' in args: kwargs['eta'] = -1
+    if 'normalization' in args:
+        kwargs['normalization'] = 'Bullshit'
+
+        geo = Cylinder(electron.debye, electron.debye)
+        with pytest.raises(ValueError):
+            current(geo, electron, **kwargs)

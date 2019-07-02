@@ -69,7 +69,7 @@ def normalization_current(geometry, species):
 
     return I0
 
-def thermal_current(geometry, species, normalize=False):
+def thermal_current(geometry, species, normalization=None):
     """
     Returns the thermal current for the given species and geometry. The
     thermal current is the current the species contributes to a probe at zero
@@ -90,7 +90,7 @@ def thermal_current(geometry, species, normalize=False):
     """
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         I = 0
@@ -100,10 +100,12 @@ def thermal_current(geometry, species, normalize=False):
 
     kappa, alpha = species.kappa, species.alpha
 
-    if normalize:
+    if normalization is None:
+        I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
         I0 = 1
     else:
-        I0 = normalization_current(geometry, species)
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
         if kappa == float('inf'):
@@ -125,7 +127,7 @@ def thermal_current(geometry, species, normalize=False):
 
     return I0*C*D
 
-def OML_current(geometry, species, V=None, eta=None, normalize=False):
+def OML_current(geometry, species, V=None, eta=None, normalization=None):
 
     """
     Current collected by a probe according to the Orbital Motion Limited (OML)
@@ -152,7 +154,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         species' charge and temperature, k is Boltzmann's constant and V is
         the probe voltage in volts.
 
-    normalize: bool
+    normalization: bool
         Whether or not to normalize the output current by
         ``normalization_current()``
 
@@ -162,7 +164,7 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     """
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -205,10 +207,15 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
         F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
 
-    if normalize:
-        I0 = 1
-    else:
+    if normalization is None:
         I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
+        I0 = 1
+    elif normalization.lower() == 'th':
+        I0 = normalization_current(geometry, species)/\
+             thermal_current(geometry, species)
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
 
