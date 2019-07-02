@@ -26,11 +26,15 @@ import pytest
 import inspect
 from scipy.constants import value as constants
 
+
+
 current_models = [
     thermal_current,
     normalization_current,
     OML_current,
-    finite_radius_current
+    finite_radius_current,
+    finite_length_current,
+    finite_length_current_density
 ]
 
 @pytest.fixture
@@ -50,7 +54,8 @@ def test_multiple_species(current, electron, proton):
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
-    geo = Sphere(electron.debye)
+    # geo = Sphere(electron.debye)
+    geo = Cylinder(electron.debye, 0.1*electron.debye)
     Ie = current(geo, electron, **kwargs)
     Ii = current(geo, proton, **kwargs)
     I  = current(geo, [electron, proton], **kwargs)
@@ -88,8 +93,9 @@ def test_eta(current, electron):
         T = 1000
         eta = -10
 
-        I_eta = current(Sphere(electron.debye), electron, eta=eta)
-        I_V   = current(Sphere(electron.debye), electron, V=-eta*k*T/e)
+        geometry = Cylinder(r=electron.debye, l=10*electron.debye)
+        I_eta = current(geometry, electron, eta=eta)
+        I_V   = current(geometry, electron, V=-eta*k*T/e)
 
         assert I_eta == approx(I_V)
 
@@ -117,21 +123,24 @@ def test_multiple_species_normalize(current, electron, proton, caplog):
 @pytest.mark.parametrize("current", current_models)
 def test_input_output_format(current, electron):
 
+    geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
+    # geo = Sphere(electron.debye)
+
     args = inspect.getfullargspec(current).args
     if 'V' in args:
 
-        I = current(Sphere(electron.debye), electron, 0.1)
+        I = current(geo, electron, 0.1)
         assert(isinstance(I, float))
 
-        I = current(Sphere(electron.debye), electron, 1)
+        I = current(geo, electron, 1)
         assert(isinstance(I, float))
 
-        I = current(Sphere(electron.debye), electron, [1, 2])
+        I = current(geo, electron, [1, 2])
         assert(isinstance(I, np.ndarray))
         assert(I.dtype==np.float)
         assert(I.shape==(2,))
 
-        I = current(Sphere(electron.debye), electron, np.array([1, 2]))
+        I = current(geo, electron, np.array([1, 2]))
         assert(isinstance(I, np.ndarray))
         assert(I.dtype==np.float)
         assert(I.shape==(2,))

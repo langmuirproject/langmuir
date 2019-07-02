@@ -173,8 +173,8 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
 
     return I[0] if len(I) == 1 else I
 
-def finite_length_current_density(geometry, species, z=None, zeta=None,
-                                  V=None, eta=None, normalize=None):
+def finite_length_current_density(geometry, species, V=None, eta=None,
+                                  z=None, zeta=None, normalize=None):
 
     if isinstance(species, list):
         if normalize == True:
@@ -185,8 +185,7 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
             return None
         i = 0
         for s in species:
-            i += finite_length_current_density(geometry, species, z=None, zeta=None,
-                                               V=None, eta=None, normalize=False)
+            i += finite_length_current_density(geometry, s, V, eta, z, zeta)
         return i
 
     q, m, n, T = species.q, species.m, species.n, species.T
@@ -197,13 +196,22 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
         logger.error("Finite length effect data only available for Maxwellian")
 
     if V is not None:
+        V = make_array(V)
         eta = q*V/(k*T)
+    else:
+        eta = make_array(eta)
+
+    # if V is not None:
+    #     eta = q*V/(k*T)
+
+    if not isinstance(geometry, Cylinder):
+        raise ValueError('Geometry not supported: {}'.format(geometry))
 
     if z is not None:
         zeta = z/species.debye
 
-    if not isinstance(geometry, Cylinder):
-        raise ValueError('Geometry not supported: {}'.format(geometry))
+    if zeta is None:
+        zeta = 0.5*geometry.l/species.debye
 
     lambd_p = geometry.l/species.debye      # Normalized probe length
     lambd_l = geometry.lguard/species.debye # Normalized left guard length
@@ -264,13 +272,14 @@ def finite_length_current_density(geometry, species, z=None, zeta=None,
         # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
         i = i0*additive_model(lambd_l+zeta, lambd_t, C, A, alpha, delta)
 
-    return i
+    # return i
+    return i[0] if len(i) == 1 else i
 
-def finite_length_current(geometry, species, z=None,
+def finite_length_current(geometry, species,
                           V=None, eta=None, normalize=None):
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalize not in (False, None):
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -278,8 +287,7 @@ def finite_length_current(geometry, species, z=None,
             return None
         I = 0
         for s in species:
-            I += finite_length_current(geometry, species, z=None,
-                                       V=None, eta=None, normalize=False)
+            I += finite_length_current(geometry, s, V, eta)
         return I
 
     q, m, n, T = species.q, species.m, species.n, species.T
@@ -289,8 +297,14 @@ def finite_length_current(geometry, species, z=None,
     if kappa != float('inf') or alpha != 0:
         logger.error("Finite length effect data only available for Maxwellian")
 
+    # if V is not None:
+    #     eta = q*V/(k*T)
+
     if V is not None:
+        V = make_array(V)
         eta = q*V/(k*T)
+    else:
+        eta = make_array(eta)
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
@@ -339,7 +353,7 @@ def finite_length_current(geometry, species, z=None,
         # Hence OML_current returns division by i_th and not I_th.
         # To correct this we need to divide by geometry.l
     elif normalize=='OML': # I = integral of g
-        I0 = 1
+        I0 = 1/geometry.l
     else: # I0 = I_OML => I = I_OML * integral of g = actual current
         geonorm = deepcopy(geometry)
         geonorm.l = 1
@@ -355,7 +369,8 @@ def finite_length_current(geometry, species, z=None,
         I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
                              -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
 
-    return I
+    # return I
+    return I[0] if len(I) == 1 else I
 
 # def Gamma(a, x):
 #     return special.gammaincc(a, x)*special.gamma(a)
