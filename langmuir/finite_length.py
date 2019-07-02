@@ -20,158 +20,15 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __future__ import division
-from langmuir.tables import *
+from langmuir.analytical import *
 from langmuir.geometry import *
 from langmuir.species import *
 from langmuir.misc import *
 from scipy.interpolate import griddata
 from scipy.constants import value as constants
 from copy import deepcopy
-import scipy.special as special
 import numpy as np
 import os
-
-def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
-                          table='laframboise-darian-marholm'):
-    """
-    A current model taking into account the effects of finite radius by
-    interpolating between tabulated normalized currents. The model only
-    accounts for the attracted-species currents (for which eta<0). It does
-    not extrapolate, but returns ``nan`` when the input parameters are outside
-    the domain of the model. This happens when the normalized potential for any
-    given species is less than -25, when kappa is less than 4, when alpha is
-    more than 0.2 or when the radius is more than 10 or sometimes all the way
-    up towards 100 (as the distribution approaches Maxwellian). Normally finite
-    radius effects are negligible for radii less than 0.2 Debye lengths (spheres)
-    or 1.0 Debye lengths (cylinders).
-
-    The model can be based on the following tables, as decided by the ``table``
-    parameter:
-
-    - ``'laframboise'``.
-      The de-facto standard tables for finite radius currents, tables 5c
-      and 6c in Laframboise, "Theory of Spherical and Cylindrical Langmuir
-      Probes in a Collisionless, Maxwellian Plasma at Rest", PhD Thesis.
-      Covers Maxwellian plasmas only, probe radii ranging from 0 to 100 Debye
-      lengths.
-
-    - ``'darian-marholm uncomplete'``.
-      These tables covers Maxwellian, Kappa, Cairns and Kappa-Cairns
-      distributions for radii ranging from 0.2 Debye lengths (spheres) or
-      1.0 Debye length (cylinders) up to 10 Debye lengths. They are not as
-      accurate as ``'laframboise'`` for pure the Maxwellian, but usually within
-      one or two percent.
-
-    - ``'darian-marholm'``.
-      Same as above, but this is complemented by adding analytical values from
-      OML theory, thereby extending the range of valid radii down to zero Debye
-      lengths. In addition, the values for zero potential are replaced by
-      analytical values (i.e. the thermal current), since these are amongst the
-      most inaccurate in the above, and more accurate values can be analytically
-      computed.
-
-    - ``'laframboise-darian-marholm'``.
-      This replaces the tabulated values for the Maxwellian distribution in
-      ``'darian-marholm'`` with those of Laframboise. Accordingly this table
-      produces the most accurate result available in any situation, and has the
-      widest available parameter domain, with the probe radius gradually
-      increasing from 10 towards 100 Debye lengths as the distribution
-      approaches the Maxwellian.
-
-    Parameters
-    ----------
-    geometry: Plane, Cylinder or Sphere
-        Probe geometry
-
-    species: Species or list of Species
-        Species constituting the background plasma
-
-    V: float or float array
-        Probe voltage(s) in volts
-
-    eta: float or float array
-        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
-        species' charge and temperature, k is Boltzmann's constant and V is
-        the probe voltage in volts.
-
-    normalize: bool
-        Whether or not to normalize the output current by
-        ``normalization_current()``
-
-    table: string
-        Which table to use for interpolation. See detailed description above.
-
-    Returns
-    -------
-    float or float array of currents.
-    """
-    if isinstance(species, list):
-        if normalize == True:
-            logger.error('Cannot normalize current to more than one species')
-            return None
-        if eta is not None:
-            logger.error('Cannot normalize voltage to more than one species')
-            return None
-        I = 0
-        for s in species:
-            I += finite_radius_current(geometry, s, V, eta, table=table)
-        return I
-
-    q, m, n, T = species.q, species.m, species.n, species.T
-    kappa, alpha = species.kappa, species.alpha
-    k = constants('Boltzmann constant')
-
-    if V is not None:
-        V = make_array(V)
-        eta = q*V/(k*T)
-    else:
-        eta = make_array(eta)
-
-    eta = deepcopy(eta)
-
-    I = np.zeros_like(eta)
-
-    indices_n = np.where(eta > 0)[0]   # indices for repelled particles
-    indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
-
-    if normalize:
-        I0 = 1
-    else:
-        I0 = normalization_current(geometry, species)
-
-    if isinstance(geometry, Sphere):
-        table += ' sphere'
-    elif isinstance(geometry, Cylinder):
-        table += ' cylinder'
-    else:
-        raise ValueError('Geometry not supported: {}'.format(geometry))
-
-    R = geometry.r/species.debye
-
-    if "darian-marholm" in table:
-        table = get_table(table)
-        pts = table['points']
-        vals = table['values'].reshape(-1)
-        I[indices_p] = I0*griddata(pts, vals, (1/kappa, alpha, R, eta[indices_p]))
-
-    else:
-        table = get_table(table)
-        pts = table['points']
-        vals = table['values'].reshape(-1)
-        I[indices_p] = I0*griddata(pts, vals, (R, eta[indices_p]))
-        if(kappa != float('inf') or alpha != 0):
-            logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
-
-    if len(indices_n)>0:
-        pos_neg = "positive" if q>0 else "negative"
-        logger.warning("Only attracted species current is covered by tabulated "
-                       "values. Currents due to {} is set to zero for "
-                       "{} potentials".format(species, pos_neg))
-
-    if any(np.isnan(I)):
-        logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
-
-    return I[0] if len(I) == 1 else I
 
 def finite_length_current_density(geometry, species, V=None, eta=None,
                                   z=None, zeta=None, normalize=None):
@@ -196,22 +53,28 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
         logger.error("Finite length effect data only available for Maxwellian")
 
     if V is not None:
+        eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
-        eta = q*V/(k*T)
+        eta = q*V/(k*T) # V must be array (not list) to allow this
     else:
+        eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
-    # if V is not None:
-    #     eta = q*V/(k*T)
+    eta = eta[:, None] # Make eta rows
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    if z is not None:
-        zeta = z/species.debye
-
     if zeta is None:
         zeta = 0.5*geometry.l/species.debye
+
+    if z is not None:
+        zeta_isarray = isinstance(z, (np.ndarray, list, tuple))
+        z = make_array(z)
+        zeta = z/species.debye # z must be array (not list) to allow this
+    else:
+        zeta_isarray = isinstance(zeta, (np.ndarray, list, tuple))
+        zeta = make_array(zeta)
 
     lambd_p = geometry.l/species.debye      # Normalized probe length
     lambd_l = geometry.lguard/species.debye # Normalized left guard length
@@ -243,10 +106,15 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
 
     lambd_coeff = min(lambd_t, max(lambds))
 
+    print("ETA: {}".format(eta.shape))
+
     C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
     A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
     alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
     delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
+
+    print("ETA: {}, C: {}".format(eta.shape, C.shape))
+    print(C)
 
     # def f(z):
     #     return A*np.exp(-alpha*z)*(z**gamma)
@@ -265,15 +133,63 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
         geonorm.l = 1
         i0 = OML_current(geonorm, species, eta=eta)
 
-    if lambd_l==float('inf'):
-        i = i0*additive_model_noleft(zeta, lambd_p+lambd_r, C, A, alpha, delta)
-    else:
-        # i = i0*g(zeta, lambd)
-        # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
-        i = i0*additive_model(lambd_l+zeta, lambd_t, C, A, alpha, delta)
+    # if lambd_l==float('inf'):
+    #     i = i0*additive_model_noleft(zeta, lambd_p+lambd_r, C, A, alpha, delta)
+    # else:
+    #     # i = i0*g(zeta, lambd)
+    #     # i = i0*additive_model(zeta, lambd, A, alpha, 0, 1, gamma, C)
+    #     i = i0*additive_model(lambd_l+zeta, lambd_t, C, A, alpha, delta)
 
     # return i
-    return i[0] if len(i) == 1 else i
+    # return i[0] if len(i) == 1 else i
+
+    def h(zeta):
+        """
+        Implements the function
+
+            h(zeta) = A*(zeta-delta+alpha**(-1))*np.exp(-alpha*zeta),
+
+        with h(inf)=0. Supports matrix operations.
+        """
+        res = np.zeros((len(alpha), len(zeta)))
+        ind = np.where(zeta!=np.inf)[0] # res=0 where zeta=inf
+        zeta = zeta[ind]
+        res[:,ind] = A*(zeta-delta+alpha**(-1))*np.exp(-alpha*zeta)
+        return res
+
+    # def g(zeta_p, lambd_l, lambd_p, lambd_r):
+    #     """
+    #     Implements the function
+
+    #         g(zeta) = C*(1+h(zeta)+h(lambda-zeta)).
+
+    #     with lambda = lambda_l + lambda_p + lambda_r where the terms
+    #     represent the left guard, the probe, and the right guard,
+    #     respectively, and zeta_p = zeta + lambda_l is the position
+    #     on the probe, and zeta is the position from the leftmost point.
+    #     This decomposition allows the left/right edge-function h to be
+    #     written independetly on lambda_r/lambda_l, which would cause
+    #     loss of precision as the guard tends to infinity.
+    #     """
+    #     return C*(1+h(lambd_l+zeta_p)+h(lambd_p+lambd_r-zeta_p))
+
+    # i = i0*g(zeta, lambd_l, lambd_p, lambd_r)
+
+    g = C*(1+h(lambd_l+zeta)+h(lambd_p+lambd_r-zeta))
+    i = i0*g
+
+    # i = i0*additive_model(lambd_l+zeta, lambd_t, C, A, alpha, delta)
+
+    if zeta_isarray:
+        if eta_isarray:
+            return i
+        else:
+            return i.ravel()
+    else:
+        if eta_isarray:
+            return i.ravel()
+        else:
+            return i[0][0]
 
 def finite_length_current(geometry, species,
                           V=None, eta=None, normalize=None):
@@ -362,12 +278,22 @@ def finite_length_current(geometry, species,
     # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, A, alpha, 0, 1, gamma, C)
     #                      -int_additive_model(lambd_l   , lambd_t, A, alpha, 0, 1, gamma, C))
 
-    if lambd_l==float('inf'):
-        I = I0*species.debye*(int_additive_model_noleft(lambd_p, lambd_p+lambd_r, C, A, alpha, delta)
-                             -int_additive_model_noleft(0      , lambd_p+lambd_r, C, A, alpha, delta))
-    else:
-        I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
-                             -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+    # if lambd_l==float('inf'):
+    #     I = I0*species.debye*(int_additive_model_noleft(lambd_p, lambd_p+lambd_r, C, A, alpha, delta)
+    #                          -int_additive_model_noleft(0      , lambd_p+lambd_r, C, A, alpha, delta))
+    # else:
+    #     I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
+    #                          -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+
+    # I = I0*species.debye*(int_additive_model(lambd_l+lambd_p, lambd_t, C, A, alpha, delta)
+    #                      -int_additive_model(lambd_l        , lambd_t, C, A, alpha, delta))
+
+    def H(zeta):
+        if zeta==float('inf'): return np.zeros_like(alpha)
+        return A*(alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
+
+    int_g = C*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r)-H(lambd_l)-H(lambd_r))
+    I = I0*species.debye*int_g
 
     # return I
     return I[0] if len(I) == 1 else I
@@ -392,19 +318,29 @@ def finite_length_current(geometry, species,
 #                   - A*H(lambd-zeta, alpha, gamma) - B*H(lambd-zeta, beta, gamma)
 
 def h(zeta, alpha, delta):
-    return (zeta-delta+1/alpha)*np.exp(-alpha*zeta)
+    res = np.zeros((len(alpha), len(zeta)))
+    ind = np.where(zeta!=np.inf)[0] # res=0 where zeta=inf
+    zeta = zeta[ind]
+    res[:,ind] = (zeta-delta+alpha**(-1))*np.exp(-alpha*zeta)
+    return res
+
+# def H(zeta, alpha, delta):
+#     res = np.zeros_like(alpha)
+#     ind = np.where(zeta!=np.inf)[0]
 
 def H(zeta, alpha, delta):
+    if zeta==float('inf'): return np.zeros_like(alpha)
     return (alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
 
 def additive_model(zeta, lambd, C, A, alpha, delta):
     return C * (1 + A*h(zeta, alpha, delta) + A*h(lambd-zeta, alpha, delta))
 
-def additive_model_noleft(zeta, lambd, C, A, alpha, delta):
-    return C * (1 + A*h(lambd-zeta, alpha, delta))
+# def additive_model_noleft(zeta, lambd, C, A, alpha, delta):
+#     return C * (1 + A*h(lambd-zeta, alpha, delta))
 
 def int_additive_model(zeta, lambd, C, A, alpha, delta):
+    print("zeta={}, labmda={}".format(zeta, lambd))
     return C * (zeta + A*H(zeta, alpha, delta) - A*H(lambd-zeta, alpha, delta))
 
-def int_additive_model_noleft(zeta, lambd, C, A, alpha, delta):
-    return C * (zeta - A*H(lambd-zeta, alpha, delta))
+# def int_additive_model_noleft(zeta, lambd, C, A, alpha, delta):
+#     return C * (zeta - A*H(lambd-zeta, alpha, delta))
