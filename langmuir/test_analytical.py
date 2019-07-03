@@ -28,11 +28,11 @@ def test_thermal_current_maxwellian_normalized():
     sp = Species(n=1e11, T=1000)
 
     geo = Cylinder(3*sp.debye, 1)
-    I = thermal_current(geo, sp, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
     assert(I == approx(1))
 
     geo = Sphere(3*sp.debye)
-    I = thermal_current(geo, sp, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
     assert(I == approx(1))
 
 def test_thermal_current_cairns_normalized():
@@ -40,14 +40,14 @@ def test_thermal_current_cairns_normalized():
     sp_m = Species(n=1e11, T=1000, alpha=0.0)
 
     geo = Cylinder(3 * sp.debye, 1)
-    I = thermal_current(geo, sp, normalize=True)
-    I_m = thermal_current(geo, sp_m, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
+    I_m = thermal_current(geo, sp_m, normalization='thmax')
     assert(I == approx(0.4))
     assert(I_m == approx(1))
 
     geo = Sphere(3 * sp.debye)
-    I = thermal_current(geo, sp, normalize=True)
-    I_m = thermal_current(geo, sp_m, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
+    I_m = thermal_current(geo, sp_m, normalization='thmax')
     assert(I == approx(1.45))
     assert(I_m == approx(1))
 
@@ -55,11 +55,11 @@ def test_thermal_current_kappa_normalized():
     sp = Species(n=1e11, T=1000, kappa=4)
 
     geo = Cylinder(3 * sp.debye, 1)
-    I = thermal_current(geo, sp, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
     assert(I == approx(1.8446619684315548))
 
     geo = Sphere(3 * sp.debye)
-    I = thermal_current(geo, sp, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
     assert(I == approx(0.95153286194814457))
 
 def test_thermal_current_kappa_cairns_normalized():
@@ -67,14 +67,14 @@ def test_thermal_current_kappa_cairns_normalized():
     sp_k = Species(n=1e11, T=1000, alpha=0, kappa=4)
 
     geo = Cylinder(3 * sp.debye, 1)
-    I = thermal_current(geo, sp, normalize=True)
-    I_k = thermal_current(geo, sp_k, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
+    I_k = thermal_current(geo, sp_k, normalization='thmax')
     assert(I == approx(0.43920523057894167))
     assert(I_k == approx(1.8446619684315548))
 
     geo = Sphere(3 * sp.debye)
-    I = thermal_current(geo, sp, normalize=True)
-    I_k = thermal_current(geo, sp_k, normalize=True)
+    I = thermal_current(geo, sp, normalization='thmax')
+    I_k = thermal_current(geo, sp_k, normalization='thmax')
     assert(I == approx(2.5374209651950519))
     assert(I_k == approx(0.95153286194814457))
 
@@ -82,11 +82,11 @@ def test_thermal_OML_current_maxwellian_normalized():
     sp = Species(n=1e11, T=1000)
 
     geo = Cylinder(3*sp.debye, 1)
-    I = OML_current(geo, sp, eta=0, normalize=True)
+    I = OML_current(geo, sp, eta=0, normalization='thmax')
     assert(I == approx(1))
 
     geo = Sphere(3*sp.debye)
-    I = OML_current(geo, sp, eta=0, normalize=True)
+    I = OML_current(geo, sp, eta=0, normalization='thmax')
     assert(I == approx(1))
 
 def test_OML_current_maxwellian():

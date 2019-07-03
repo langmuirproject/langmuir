@@ -40,12 +40,12 @@ def normalization_current(geometry, species):
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
     Returns
     -------
-    float or float array of currents.
+    float
     """
 
     if isinstance(species, list):
@@ -69,28 +69,25 @@ def normalization_current(geometry, species):
 
     return I0
 
-def thermal_current(geometry, species, normalize=False):
+def thermal_current(geometry, species, normalization=None):
     """
-    Returns the thermal current for the given species and geometry. The
-    thermal current is the current the species contributes to a probe at zero
-    potential with respect to the background plasma due to random thermal
-    movements of particles.
+    Returns the thermal current.
 
     Parameters
     ----------
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
     Returns
     -------
-    float or float array of currents.
+    float
     """
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         I = 0
@@ -100,10 +97,12 @@ def thermal_current(geometry, species, normalize=False):
 
     kappa, alpha = species.kappa, species.alpha
 
-    if normalize:
+    if normalization is None:
+        I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
         I0 = 1
     else:
-        I0 = normalization_current(geometry, species)
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
         if kappa == float('inf'):
@@ -125,8 +124,7 @@ def thermal_current(geometry, species, normalize=False):
 
     return I0*C*D
 
-def OML_current(geometry, species, V=None, eta=None, normalize=False):
-
+def OML_current(geometry, species, V=None, eta=None, normalization=None):
     """
     Current collected by a probe according to the Orbital Motion Limited (OML)
     theory. The model assumes a probe of infinitely small radius compared to
@@ -141,28 +139,29 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
-    V: float or float array
-        Probe voltage(s) in volts
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
 
-    eta: float or float array
-        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
-        species' charge and temperature, k is Boltzmann's constant and V is
-        the probe voltage in volts.
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
 
-    normalize: bool
-        Whether or not to normalize the output current by
-        ``normalization_current()``
+    normalization: 'th', 'thmax', None
+        Wether to normalize the output current by, respectively, the thermal
+        current, the Maxwellian thermal current, or not at all, i.e., current
+        in [A/m].
 
     Returns
     -------
-    float or float array of currents.
+    float if voltage is float. array of floats corresponding to voltage if
+    voltage is array-like.
     """
 
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -179,9 +178,11 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     k = constants('Boltzmann constant')
 
     if V is not None:
+        eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
         eta = q*V/(k*T)
     else:
+        eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
     eta = deepcopy(eta) # Prevents this function from changing eta in caller
@@ -203,10 +204,15 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
         E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
         F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
 
-    if normalize:
-        I0 = 1
-    else:
+    if normalization is None:
         I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
+        I0 = 1
+    elif normalization.lower() == 'th':
+        I0 = normalization_current(geometry, species)/\
+             thermal_current(geometry, species)
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
 
@@ -257,4 +263,4 @@ def OML_current(geometry, species, V=None, eta=None, normalize=False):
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
-    return I[0] if len(I)==1 else I
+    return I if eta_isarray else I[0]

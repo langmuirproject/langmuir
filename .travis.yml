@@ -5,7 +5,8 @@ python:
 - 3.6
 - 3.7-dev
 before_install:
-- pip install pytest pytest-cov
+- pip install "pytest>=3.6"
+- pip install pytest-cov
 - pip install coveralls
 script:
 - pytest

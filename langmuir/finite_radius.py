@@ -27,9 +27,11 @@ from langmuir.misc import *
 from scipy.interpolate import griddata
 from scipy.constants import value as constants
 from copy import deepcopy
+import scipy.special as special
 import numpy as np
+import os
 
-def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
+def finite_radius_current(geometry, species, V=None, eta=None, normalization=None,
                           table='laframboise-darian-marholm'):
     """
     A current model taking into account the effects of finite radius by
@@ -81,30 +83,31 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
-    V: float or float array
-        Probe voltage(s) in volts
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
 
-    eta: float or float array
-        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
-        species' charge and temperature, k is Boltzmann's constant and V is
-        the probe voltage in volts.
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
 
-    normalize: bool
-        Whether or not to normalize the output current by
-        ``normalization_current()``
+    normalization: 'th', 'thmax', 'oml', None
+        Wether to normalize the output current by, respectively, the thermal
+        current, the Maxwellian thermal current, the OML current, or not at
+        all, i.e., current in [A/m].
 
     table: string
         Which table to use for interpolation. See detailed description above.
 
     Returns
     -------
-    float or float array of currents.
+    float if voltage is float. array of floats corresponding to voltage if
+    voltage is array-like.
     """
     if isinstance(species, list):
-        if normalize == True:
+        if normalization is not None:
             logger.error('Cannot normalize current to more than one species')
             return None
         if eta is not None:
@@ -132,17 +135,24 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalize=False,
     indices_n = np.where(eta > 0)[0]   # indices for repelled particles
     indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
 
-    if normalize:
-        I0 = 1
-    else:
+    if normalization is None:
         I0 = normalization_current(geometry, species)
+    elif normalization.lower() == 'thmax':
+        I0 = 1
+    elif normalization.lower() == 'th':
+        I0 = normalization_current(geometry, species)/\
+             thermal_current(geometry, species)
+    elif normalization.lower() == 'oml':
+        I0 = normalization_current(geometry, species)/\
+             OML_current(geometry, species, eta=eta)
+    else:
+        raise ValueError('Normalization not supported: {}'.format(normalization))
 
     if isinstance(geometry, Sphere):
         table += ' sphere'
     elif isinstance(geometry, Cylinder):
         table += ' cylinder'
     else:
-        print('hei')
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye

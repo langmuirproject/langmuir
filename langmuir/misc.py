@@ -30,7 +30,7 @@ def make_array(arr):
     """
     Takes a list, tuple, integer or float and returns a numpy array.
     """
-    if isinstance(arr, (int, float)):
+    if isinstance(arr, (int, float, np.int64, np.int32, np.float64, np.float32)):
         arr = [arr]
     return np.array(arr, dtype=np.float)
 

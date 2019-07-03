@@ -393,10 +393,10 @@ def get_table(name, provide_points=True):
             for j, alpha in enumerate(alphas):
                 sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
                 geo = Cylinder(1.0, 1)
-                vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalize=True)
+                vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalization='thmax')
                 for k, R in enumerate(Rs):
                     geo = Cylinder(R*sp.debye, 1)
-                    vals[i,j,k,0] = thermal_current(geo, sp, normalize=True)
+                    vals[i,j,k,0] = thermal_current(geo, sp, normalization='thmax')
 
         table['values'] = vals
         table['axes'] = (kappa_recips, alphas, Rs, etas)
@@ -417,10 +417,10 @@ def get_table(name, provide_points=True):
             for j, alpha in enumerate(alphas):
                 sp = Species(n=1e11, T=1000, kappa=kappa, alpha=alpha)
                 geo = Sphere(1.0)
-                vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalize=True)
+                vals[i,j,0,:] = OML_current(geo, sp, eta=etas, normalization='thmax')
                 for k, R in enumerate(Rs):
                     geo = Sphere(R*sp.debye)
-                    vals[i,j,k,0] = thermal_current(geo, sp, normalize=True)
+                    vals[i,j,k,0] = thermal_current(geo, sp, normalization='thmax')
 
         table['values'] = vals
         table['axes'] = (kappa_recips, alphas, Rs, etas)
