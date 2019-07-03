@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#/usr/bin/env python
 import matplotlib as mp
 
 mp.rc('text', usetex=True)
@@ -50,52 +50,52 @@ eta = np.linspace(10, 100, 100)
 
 geo = Cylinder(r=r, l=l)
 
-I = finite_length_current(geo, elec, eta=-eta, normalize='th')
+I = finite_length_current(geo, elec, eta=-eta, normalization='th')
 popt, pcov = curve_fit(power_law, eta, I)
 beta = popt[1]
 
-i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalization='OML')
 ax.fill_between(zeta_p, i, color=color, alpha=alpha, lw=0)
 line, = ax.plot(zeta_p, i, lw=lw,
                 label='$\\lambda_g={:.0f}, \\beta={:.2f}$'.format(0, beta),
                 marker=markers[0], markersize=ms, markevery=(1000,1000))
-i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalization='OML')
 ax.plot(zeta_m[1:], i[1:], markers[0], markersize=ms, color=line.get_color())
 
 # FINITE GUARD
 
 geo = Cylinder(r=r, l=l, lguard=lguard)
 
-I = finite_length_current(geo, elec, eta=-eta, normalize='th')
+I = finite_length_current(geo, elec, eta=-eta, normalization='th')
 popt, pcov = curve_fit(power_law, eta, I)
 beta = popt[1]
 
-i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalization='OML')
 ax.fill_between(zeta_p, i, color=color, alpha=alpha, lw=0)
 line, = ax.plot(zeta_p, i, lw=lw,
                 label='$\\lambda_g={:.0f}, \\beta={:.2f}$'.format(lambd_l, beta),
                 marker=markers[1], markersize=ms, markevery=(1000,1000))
-i = finite_length_current_density(geo, elec, zeta=zeta_n, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_n, eta=-10, normalization='OML')
 ax.plot(zeta_n, i, ':', color=line.get_color(), lw=lw)
-i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalization='OML')
 ax.plot(zeta_m, i, markers[1], markersize=ms, color=line.get_color())
 
 # INFINITE GUARD
 
 geo = Cylinder(r=r, l=l, lguard=float('inf'))
 
-I = finite_length_current(geo, elec, eta=-eta, normalize='th')
+I = finite_length_current(geo, elec, eta=-eta, normalization='th')
 popt, pcov = curve_fit(power_law, eta, I)
 beta = popt[1]
 
-i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_p, eta=-10, normalization='OML')
 ax.fill_between(zeta_p, i, color=color, alpha=alpha, lw=0)
 line, = ax.plot(zeta_p, i, lw=lw,
                 label='$\\lambda_g\\rightarrow\\infty, \\beta={:.2f}$'.format(beta),
                 marker=markers[2], markersize=ms, markevery=(1000,1000))
-i = finite_length_current_density(geo, elec, zeta=zeta_n, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_n, eta=-10, normalization='OML')
 ax.plot(zeta_n, i, ':', color=line.get_color(), lw=lw)
-i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalize='OML')
+i = finite_length_current_density(geo, elec, zeta=zeta_m, eta=-10, normalization='OML')
 ax.plot(zeta_m, i, markers[2], markersize=ms, color=line.get_color())
 
 ax.set_ylim([0.95, 1.95])

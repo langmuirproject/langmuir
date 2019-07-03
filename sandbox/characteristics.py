@@ -19,7 +19,7 @@ def power_law(eta, c, beta):
     return -c*eta**beta
 
 elec = Species(n=1, eV=1)
-lambds = np.array([1, 3, 10, 30, 500])
+lambds = np.array([1, 3, 10, 30, 600])
 
 figwidth = 85
 figheight = 70
@@ -42,8 +42,8 @@ for i, lambd in enumerate(lambds):
     l=lambd*elec.debye
     geo = Cylinder(r=r, l=l)
 
-    I = finite_length_current(geo, elec, eta=-eta, normalize='th')
-    I_m = finite_length_current(geo, elec, eta=-eta_m, normalize='th')
+    I = finite_length_current(geo, elec, eta=-eta, normalization='th')
+    I_m = finite_length_current(geo, elec, eta=-eta_m, normalization='th')
 
     popt, pcov = curve_fit(power_law, eta, I)
 
