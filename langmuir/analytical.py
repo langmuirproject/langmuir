@@ -40,12 +40,12 @@ def normalization_current(geometry, species):
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
     Returns
     -------
-    float or float array of currents.
+    float
     """
 
     if isinstance(species, list):
@@ -71,22 +71,19 @@ def normalization_current(geometry, species):
 
 def thermal_current(geometry, species, normalization=None):
     """
-    Returns the thermal current for the given species and geometry. The
-    thermal current is the current the species contributes to a probe at zero
-    potential with respect to the background plasma due to random thermal
-    movements of particles.
+    Returns the thermal current.
 
     Parameters
     ----------
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
     Returns
     -------
-    float or float array of currents.
+    float
     """
 
     if isinstance(species, list):
@@ -128,7 +125,6 @@ def thermal_current(geometry, species, normalization=None):
     return I0*C*D
 
 def OML_current(geometry, species, V=None, eta=None, normalization=None):
-
     """
     Current collected by a probe according to the Orbital Motion Limited (OML)
     theory. The model assumes a probe of infinitely small radius compared to
@@ -143,24 +139,25 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
-    V: float or float array
-        Probe voltage(s) in volts
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
 
-    eta: float or float array
-        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
-        species' charge and temperature, k is Boltzmann's constant and V is
-        the probe voltage in volts.
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
 
-    normalization: bool
-        Whether or not to normalize the output current by
-        ``normalization_current()``
+    normalization: 'th', 'thmax', None
+        Wether to normalize the output current by, respectively, the thermal
+        current, the Maxwellian thermal current, or not at all, i.e., current
+        in [A/m].
 
     Returns
     -------
-    float or float array of currents.
+    float if voltage is float. array of floats corresponding to voltage if
+    voltage is array-like.
     """
 
     if isinstance(species, list):

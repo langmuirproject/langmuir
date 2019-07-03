@@ -83,27 +83,28 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
     geometry: Plane, Cylinder or Sphere
         Probe geometry
 
-    species: Species or list of Species
+    species: Species or array-like of Species
         Species constituting the background plasma
 
-    V: float or float array
-        Probe voltage(s) in volts
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
 
-    eta: float or float array
-        Normalized probe voltage(s), i.e. q*V/k*T, where q and T are the
-        species' charge and temperature, k is Boltzmann's constant and V is
-        the probe voltage in volts.
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
 
-    normalization: bool
-        Whether or not to normalize the output current by
-        ``normalization_current()``
+    normalization: 'th', 'thmax', 'oml', None
+        Wether to normalize the output current by, respectively, the thermal
+        current, the Maxwellian thermal current, the OML current, or not at
+        all, i.e., current in [A/m].
 
     table: string
         Which table to use for interpolation. See detailed description above.
 
     Returns
     -------
-    float or float array of currents.
+    float if voltage is float. array of floats corresponding to voltage if
+    voltage is array-like.
     """
     if isinstance(species, list):
         if normalization is not None:

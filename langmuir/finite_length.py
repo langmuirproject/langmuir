@@ -32,6 +32,44 @@ import os
 
 def finite_length_current_density(geometry, species, V=None, eta=None,
                                   z=None, zeta=None, normalization=None):
+    """
+    Current collected per unit length on a cylindrical probe according to the
+    Marholm-Marchand finite-length model. Assumes small radius compared to the
+    Debye length.
+
+    Parameters
+    ----------
+    geometry: Cylinder
+        Probe geometry
+
+    species: Species or array-like of Species
+        Species constituting the background plasma
+
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
+
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
+
+    z: float or array-like of floats
+        Position(s) along the probe in [m]. Overrides zeta.
+
+    zeta: float or array-like of floats
+        Position(s) along the probe normalized by the Debye length.
+
+    normalization: 'th', 'thmax', 'oml', None
+        Wether to normalize the output current per unit length by,
+        respectively, the thermal current per unit length, the Maxwellian
+        thermal current per unit length, the OML current per unit length, or
+        not at all, i.e., current in [A/m].
+
+    Returns
+    -------
+    float if voltage and position are floats. 1D array of floats corresponding
+    to voltage or position if one of them is array-like. 2D array of floats if
+    voltage and position are both array-like, one row per voltage.
+    """
 
     if isinstance(species, list):
         if normalization is not None:
@@ -122,6 +160,35 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
 
 def finite_length_current(geometry, species,
                           V=None, eta=None, normalization=None):
+    """
+    Current collected by a cylindrical probe according to the Marholm-Marchand
+    finite-length model. Assumes small radius compared to the Debye length.
+
+    Parameters
+    ----------
+    geometry: Cylinder
+        Probe geometry
+
+    species: Species or array-like of Species
+        Species constituting the background plasma
+
+    V: float or array-like of floats
+        Probe voltage(s) in [V]. Overrides eta.
+
+    eta: float or array-like of floats
+        Probe voltage(s) normalized by k*T/q, where q and T are the species'
+        charge and temperature and k is Boltzmann's constant.
+
+    normalization: 'th', 'thmax', 'oml', None
+        Wether to normalize the output current by, respectively, the thermal
+        current, the Maxwellian thermal current, the OML current, or not at
+        all, i.e., current in [A/m].
+
+    Returns
+    -------
+    float if voltage is float. array of floats corresponding to voltage if
+    voltage is array-like.
+    """
 
     if isinstance(species, list):
         if normalization is not None:
@@ -187,6 +254,21 @@ def finite_length_current(geometry, species,
     return I if eta_isarray else I[0]
 
 def get_lerped_coeffs(lambd, eta):
+    """
+    Fetches and interpolates Marholm-Marchand coefficients.
+
+    Parameters
+    ----------
+    lambd: float
+        Normalized probe length (lambda) to get coefficients for
+
+    eta: float
+        Normalized probe voltage (eta) to get coefficients for
+
+    Returns
+    -------
+    4-tuple of coefficients (C, A, alpha, delta)
+    """
 
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
     file = np.load(fname)
