@@ -23,8 +23,11 @@ from __future__ import division
 from langmuir import *
 from pytest import approx
 import pytest
-import inspect
 from scipy.constants import value as constants
+try:
+    from inspect import getfullargspec as getargspec # Python 3
+except ImportError:
+    from inspect import getargspec # Python 2
 
 current_models = [
     thermal_current,
@@ -48,7 +51,7 @@ def test_multiple_species(current, electron, proton):
 
     # Add a voltage for those models having a V argument.
     # This must be small to not make repelled current negligible.
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
@@ -65,7 +68,7 @@ def test_normalization_thmax(current, electron):
 
     if current != normalization_current:
 
-        args = inspect.getfullargspec(current).args
+        args = getargspec(current).args
         kwargs = {}
         if 'V' in args: kwargs['V'] = 0.1
 
@@ -81,7 +84,7 @@ def test_normalization_th(current, electron):
 
     if current not in [normalization_current, thermal_current]:
 
-        args = inspect.getfullargspec(current).args
+        args = getargspec(current).args
         kwargs = {}
         if 'V' in args: kwargs['V'] = 0.1
 
@@ -97,7 +100,7 @@ def test_normalization_oml(current, electron):
 
     if current not in [normalization_current, thermal_current, OML_current]:
 
-        args = inspect.getfullargspec(current).args
+        args = getargspec(current).args
         kwargs = {}
         if 'V' in args: kwargs['V'] = 0.1
 
@@ -111,7 +114,7 @@ def test_normalization_oml(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_eta(current, electron):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     if 'V' in args or 'eta' in args:
 
@@ -133,7 +136,7 @@ def test_eta(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species_eta(current, electron, proton, caplog):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     if 'eta' in args:
 
         I = current(Sphere(electron.debye), [electron, proton], eta=1)
@@ -142,7 +145,7 @@ def test_multiple_species_eta(current, electron, proton, caplog):
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species_normalize(current, electron, proton, caplog):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     geometry = Cylinder(r=electron.debye, l=10*electron.debye)
     if 'V' in args: kwargs['V'] = 0.1
@@ -155,7 +158,7 @@ def test_multiple_species_normalize(current, electron, proton, caplog):
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species_zeta(current, electron, proton, caplog):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     geometry = Cylinder(r=electron.debye, l=10*electron.debye)
     if 'V' in args: kwargs['V'] = 0.1
@@ -170,7 +173,7 @@ def test_input_output_format(current, electron):
     geo = Cylinder(r=0.1*electron.debye, l=10*electron.debye)
     # geo = Sphere(electron.debye)
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     if 'V' in args:
 
         I = current(geo, electron, 0.1)
@@ -192,7 +195,7 @@ def test_input_output_format(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_geometry_error(current, electron):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     if 'V' in args: kwargs['V'] = 0.1
 
@@ -208,7 +211,7 @@ def test_geometry_error(current, electron):
 @pytest.mark.parametrize("current", current_models)
 def test_normalization_error(current, electron):
 
-    args = inspect.getfullargspec(current).args
+    args = getargspec(current).args
     kwargs = {}
     if 'eta' in args: kwargs['eta'] = -1
     if 'normalization' in args:
