@@ -10,6 +10,9 @@ Langmuir
 .. image:: https://img.shields.io/pypi/pyversions/langmuir.svg
     :target: https://pypi.org/project/langmuir
 
+.. image:: https://zenodo.org/badge/149759145.svg
+   :target: https://zenodo.org/badge/latestdoi/149759145
+
 Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes.
 
 Installation
