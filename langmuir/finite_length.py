@@ -24,7 +24,7 @@ from langmuir.analytical import *
 from langmuir.geometry import *
 from langmuir.species import *
 from langmuir.misc import *
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, RectBivariateSpline
 from scipy.constants import value as constants
 from copy import deepcopy
 import numpy as np
@@ -101,7 +101,7 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
-    eta = eta[:, None] # Make eta rows
+    # eta = eta[:, None] # Make eta rows
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
@@ -123,6 +123,13 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
     lambd_t = lambd_l + lambd_p + lambd_r   # Normalized total length
 
     C, A, alpha, delta = get_lerped_coeffs(lambd_t, eta)
+
+    # Make these column vectors, i.e. one eta per row
+    C = C[:, None]
+    A = A[:, None]
+    alpha = alpha[:, None]
+    delta = delta[:, None]
+    eta = eta[:, None]
 
     if normalization is None: # i0 = i_OML => i = i_OML * g
         geonorm = deepcopy(geometry)
@@ -297,3 +304,56 @@ def get_lerped_coeffs(lambd, eta):
     delta[ind] = 1
 
     return C, A, alpha, delta
+
+class lerper(RectBivariateSpline):
+    def __init__(self, coeffname, degree=1):
+
+        assert coeffname in ['C', 'A', 'alpha', 'delta']
+        coeffname += 's'
+
+        fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params_structured.npz')
+        file = np.load(fname)
+
+        lambds = file['lambds']
+        etas = file['etas']
+        coeff = file[coeffname]
+
+        super(lerper, self).__init__(lambds, etas, coeff, kx=degree, ky=degree)
+
+    def __call__(self, lambd, eta):
+        return super(lerper, self).__call__(lambd, eta)[0]
+
+def get_max_lambd():
+    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params_structured.npz')
+    file = np.load(fname)
+    lambds = file['lambds']
+    return max(lambds)
+
+lerp_C = lerper('C')
+lerp_A = lerper('A')
+lerp_alpha = lerper('alpha')
+lerp_delta = lerper('delta')
+max_lambd = get_max_lambd()
+
+def get_lerped_coeffs_new(lambd, eta):
+    eta = -eta
+
+    # Extrapolate for larger lambda by using the largest available
+    lambd_coeff = min(lambd, max_lambd)
+
+    # Make repelled species identical to OML through these coefficients
+    C = np.ones_like(eta)
+    A = np.zeros_like(eta)
+    alpha = np.ones_like(eta)
+    delta = np.ones_like(eta)
+
+    # Tabulated values contains datapoints as described in paper
+    ind = np.where(eta>0)[0]
+    C[ind] = lerp_C(lambd_coeff, eta[ind])
+    A[ind] = lerp_A(lambd_coeff, eta[ind])
+    alpha[ind] = lerp_alpha(lambd_coeff, eta[ind])
+    delta[ind] = lerp_delta(lambd_coeff, eta[ind])
+
+    return C, A, alpha, delta
+
+get_lerped_coeffs=get_lerped_coeffs_new
