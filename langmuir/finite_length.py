@@ -320,9 +320,6 @@ class lerper(RectBivariateSpline):
 
         super(lerper, self).__init__(lambds, etas, coeff, kx=degree, ky=degree)
 
-    def __call__(self, lambd, eta):
-        return super(lerper, self).__call__(lambd, eta)[0]
-
 def get_max_lambd():
     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params_structured.npz')
     file = np.load(fname)
@@ -349,10 +346,10 @@ def get_lerped_coeffs_new(lambd, eta):
 
     # Tabulated values contains datapoints as described in paper
     ind = np.where(eta>0)[0]
-    C[ind] = lerp_C(lambd_coeff, eta[ind])
-    A[ind] = lerp_A(lambd_coeff, eta[ind])
-    alpha[ind] = lerp_alpha(lambd_coeff, eta[ind])
-    delta[ind] = lerp_delta(lambd_coeff, eta[ind])
+    C[ind] = lerp_C(lambd_coeff, eta[ind], grid=False)
+    A[ind] = lerp_A(lambd_coeff, eta[ind], grid=False)
+    alpha[ind] = lerp_alpha(lambd_coeff, eta[ind], grid=False)
+    delta[ind] = lerp_delta(lambd_coeff, eta[ind], grid=False)
 
     return C, A, alpha, delta
 
