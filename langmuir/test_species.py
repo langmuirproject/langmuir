@@ -151,3 +151,7 @@ def test_debye():
     plasma.append(Species('proton',   n=1e11, T=1000))
     assert(debye(plasma[0])==plasma[0].debye)
     assert(debye(plasma) == approx(0.004879671013271479))
+
+def test_negative_temperature(caplog):
+    sp = Species(n=1e11, T=-1)
+    assert(caplog.records[0].levelname == 'WARNING')

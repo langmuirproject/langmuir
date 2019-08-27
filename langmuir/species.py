@@ -111,7 +111,9 @@ class Species(object):
             self.T = kwargs['T']
 
         if self.T<0:
-            logger.warning('Negative temperature')
+            self.T=0
+            logger.warning('Negative temperature interpreted as zero')
+
 
         self.vth = np.sqrt(k*self.T/self.m)
         self.eV  = self.T*k/e
