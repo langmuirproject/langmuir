@@ -197,9 +197,16 @@ def test_current_interpolated_samples():
     r = 1e-3
     ls = np.array([7, 70, 700], dtype=np.float)*1e-3
     etas = np.array([65, 1, 90], dtype=np.float)
-    Ifs = np.array([-6.2794005496528275e-06,
-                    -1.9760221828553347e-06,
-                    -0.00014456804182897328])
+
+    # Ground truth when using scipy.interpolate.griddata
+    # Ifs = np.array([-6.2794005496528275e-06,
+    #                 -1.9760221828553347e-06,
+    #                 -0.00014456804182897328])
+
+    # Ground truth when using 1st order scipy.interpolate.RectBivariateSpline
+    Ifs = np.array([-6.439906296987808e-06,
+                    -1.9562053783242e-06,
+                    -0.00014420124702985558])
 
     for l, eta, If in zip(ls, etas, Ifs):
         geo = Cylinder(r=r, l=l)
@@ -217,9 +224,16 @@ def test_current_density_interpolated_samples():
     ls = np.array([7, 70, 700], dtype=np.float)*1e-3
     etas = np.array([65, 1, 90], dtype=np.float)
     zs = np.array([0, .4, .29, 1])
-    Ifs = np.array([[-0.00045615, -0.00106614, -0.00099727, -0.00045615],
-                    [-2.92817683e-05, -2.75155255e-05, -2.76705163e-05, -2.92817683e-05],
-                    [-0.00036732, -0.00019135, -0.00019135, -0.00036732]])
+
+    # Ground truth when using scipy.interpolate.griddata
+    # Ifs = np.array([[-0.00045615, -0.00106614, -0.00099727, -0.00045615],
+    #                 [-2.92817683e-05, -2.75155255e-05, -2.76705163e-05, -2.92817683e-05],
+    #                 [-0.00036732, -0.00019135, -0.00019135, -0.00036732]])
+
+    # Ground truth when using 1st order scipy.interpolate.RectBivariateSpline
+    Ifs = np.array([[-0.00054336, -0.00105909, -0.00100473, -0.00054336],
+                    [-2.89516395e-05, -2.72642938e-05, -2.74123613e-05, -2.89516395e-05],
+                    [-0.00036957, -0.00019082, -0.00019082, -0.00036957]])
 
     for l, eta, If in zip(ls, etas, Ifs):
         geo = Cylinder(r=r, l=l)

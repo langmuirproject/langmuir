@@ -20,6 +20,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from scipy.constants import value as constants
+from langmuir.misc import *
 import numpy as np
 
 class Species(object):
@@ -108,6 +109,11 @@ class Species(object):
             self.T = self.m*kwargs['vth']**2/k
         else:
             self.T = kwargs['T']
+
+        if self.T<0:
+            self.T=0
+            logger.warning('Negative temperature interpreted as zero')
+
 
         self.vth = np.sqrt(k*self.T/self.m)
         self.eV  = self.T*k/e
