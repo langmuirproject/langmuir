@@ -260,50 +260,50 @@ def finite_length_current(geometry, species,
 
     return I if eta_isarray else I[0]
 
-def get_lerped_coeffs(lambd, eta):
-    """
-    Fetches and interpolates Marholm-Marchand coefficients.
+# def get_lerped_coeffs(lambd, eta):
+#     """
+#     Fetches and interpolates Marholm-Marchand coefficients.
 
-    Parameters
-    ----------
-    lambd: float
-        Normalized probe length (lambda) to get coefficients for
+#     Parameters
+#     ----------
+#     lambd: float
+#         Normalized probe length (lambda) to get coefficients for
 
-    eta: float
-        Normalized probe voltage (eta) to get coefficients for
+#     eta: float
+#         Normalized probe voltage (eta) to get coefficients for
 
-    Returns
-    -------
-    4-tuple of coefficients (C, A, alpha, delta)
-    """
+#     Returns
+#     -------
+#     4-tuple of coefficients (C, A, alpha, delta)
+#     """
 
-    fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
-    file = np.load(fname)
+#     fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params.npz')
+#     file = np.load(fname)
 
-    lambds = file['lambds']
-    etas = file['etas']
-    Cs = file['Cs']
-    As = file['As']
-    alphas = file['alphas']
-    deltas = file['deltas']
+#     lambds = file['lambds']
+#     etas = file['etas']
+#     Cs = file['Cs']
+#     As = file['As']
+#     alphas = file['alphas']
+#     deltas = file['deltas']
 
-    # Extrapolate for larger lambda by using the largest available
-    lambd_coeff = min(lambd, max(lambds))
+#     # Extrapolate for larger lambda by using the largest available
+#     lambd_coeff = min(lambd, max(lambds))
 
-    # Tabulated values contains datapoints as described in paper
-    C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
-    A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
-    alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
-    delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
+#     # Tabulated values contains datapoints as described in paper
+#     C     = griddata((lambds, etas), Cs    , (lambd_coeff, eta))
+#     A     = griddata((lambds, etas), As    , (lambd_coeff, eta))
+#     alpha = griddata((lambds, etas), alphas, (lambd_coeff, eta))
+#     delta = griddata((lambds, etas), deltas, (lambd_coeff, eta))
 
-    # Make repelled species identical to OML through these coefficients
-    ind = np.where(eta>=0)[0]
-    C[ind] = 1
-    A[ind] = 0
-    alpha[ind] = 1
-    delta[ind] = 1
+#     # Make repelled species identical to OML through these coefficients
+#     ind = np.where(eta>=0)[0]
+#     C[ind] = 1
+#     A[ind] = 0
+#     alpha[ind] = 1
+#     delta[ind] = 1
 
-    return C, A, alpha, delta
+#     return C, A, alpha, delta
 
 class lerper(RectBivariateSpline):
     def __init__(self, coeffname, degree=1):
