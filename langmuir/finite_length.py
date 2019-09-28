@@ -233,6 +233,9 @@ def finite_length_current(geometry, species,
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
+    if(np.any(eta<100.)):
+        logger.warning('Finite-length theory yields erroneous results for eta<100')
+
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
@@ -303,25 +306,25 @@ def finite_length_current(geometry, species,
             alphas   = file['alphas'][ind:ind+2]
             deltas   = file['deltas'][ind:ind+2]
 
-            # if interpolate.lower() == 'i2':
+            # Stretch whole probe, including guards
             lambd_ts = lambds[ind:ind+2]
             lambd_ls = lambd_l*lambd_ts/lambd_t
             lambd_ps = lambd_p*lambd_ts/lambd_t
             lambd_rs = lambd_r*lambd_ts/lambd_t
 
-            # else:
-            #     lambd_ts = lambds[ind:ind+2]
-            #     lambd_ps = lambd_ts-lambd_l-lambd_r
-            #     lambd_ls = np.array([lambd_l, lambd_l])
-            #     lambd_rs = np.array([lambd_r, lambd_r])
+            # Stretch only probe segment, constant guards
+            # lambd_ts = lambds[ind:ind+2]
+            # lambd_ps = lambd_ts-lambd_l-lambd_r
+            # lambd_ls = np.array([lambd_l, lambd_l])
+            # lambd_rs = np.array([lambd_r, lambd_r])
 
-            #     if lambd_ps[0]<0:
-            #         # Probe segment can't be shorter than zero.
-            #         # Let it be zero, and (rightly) let it collect zero current.
-            #         lambd_ps[0] = 0
-            #         lambd_ts[0] = lambd_l+lambd_r
-            #         Cs[0] = 0
-            #         print("WARNING")
+            # if lambd_ps[0]<0:
+            #     # Probe segment can't be shorter than zero.
+            #     # Let it be zero, and (rightly) let it collect zero current.
+            #     lambd_ps[0] = 0
+            #     lambd_ts[0] = lambd_l+lambd_r
+            #     Cs[0] = 0
+            #     print("WARNING")
 
             def H(zetas):
                 return As*(alphas*(deltas-zetas[:,None])-2) \
@@ -337,8 +340,17 @@ def finite_length_current(geometry, species,
             int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
 
         eta = -eta
+        attracted = np.where(eta>=0.)[0]
+        repelled  = np.where(eta< 0.)[0]
+        over      = np.where(eta>100.)[0]
+
+        eta[over] = 100
+
+        I = I0*species.debye*np.ones_like(eta)
         func = interp1d(etas, int_gs)
-        I = I0*species.debye*func(eta)
+
+        I[attracted] *= func(eta[attracted])
+        I[repelled]  *= lambd_p
 
     else:
         raise ValueError("interpolate must be either 'g' or 'I'")
@@ -430,7 +442,7 @@ def get_lerped_coeffs_new(lambd, eta):
     delta = np.ones_like(eta)
 
     # Tabulated values contains datapoints as described in paper
-    ind = np.where(eta>0)[0]
+    ind = np.where(eta>0.0)[0]
     C[ind] = lerp_C(lambd_coeff, eta[ind], grid=False)
     A[ind] = lerp_A(lambd_coeff, eta[ind], grid=False)
     alpha[ind] = lerp_alpha(lambd_coeff, eta[ind], grid=False)
