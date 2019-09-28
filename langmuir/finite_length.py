@@ -233,8 +233,8 @@ def finite_length_current(geometry, species,
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
-    if(np.any(eta<100.)):
-        logger.warning('Finite-length theory yields erroneous results for eta<100')
+    if(np.any(eta<-100.)):
+        logger.warning('Finite-length theory yields erroneous results for eta<-100')
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
