@@ -266,7 +266,7 @@ def finite_length_current(geometry, species,
         int_g = C*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r)-H(lambd_l)-H(lambd_r))
         I = I0*species.debye*int_g
 
-    elif interpolate.lower() == 'i':
+    elif interpolate.lower() in ['i', 'i2']:
 
         fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params_structured.npz')
         file = np.load(fname)
@@ -294,7 +294,7 @@ def finite_length_current(geometry, species,
             int_gs = Cs*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r) \
                                 -H(lambd_l)-H(lambd_r))
 
-        else: # interpolate between two lambdas
+        elif interpolate.lower() == 'i': # interpolate between two lambdas
 
             print("interpolates")
 
@@ -357,11 +357,51 @@ def finite_length_current(geometry, species,
             print("weight:", weight)
             int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
 
+        else:
+
+            print("interpolates")
+
+            lambds = lambds[ind:ind+2]
+            As     = file['As'][ind:ind+2]
+            Cs     = file['Cs'][ind:ind+2]
+            alphas = file['alphas'][ind:ind+2]
+            deltas = file['deltas'][ind:ind+2]
+
+            lambd_t = lambd_l+lambd_p+lambd_r
+            lambd_ts = lambds
+            lambd_ls = lambd_l*lambd_ts/lambd_t
+            lambd_ps = lambd_p*lambd_ts/lambd_t
+            lambd_rs = lambd_r*lambd_ts/lambd_t
+
+            print("segments (1):", lambd_ls[0], lambd_ps[0], lambd_rs[0], lambd_ts[0])
+            print("segments:",     lambd_l, lambd_p, lambd_r, lambd_t)
+            print("segments (2):", lambd_ls[1], lambd_ps[1], lambd_rs[1], lambd_ts[1])
+
+            def H(zetas, i, j):
+                res = As[i,j]*(alphas[i,j]*(deltas[i,j]-zetas[i])-2) \
+                                  *np.exp(-alphas[i,j]*zetas[i])/alphas[i,j]**2
+                return res
+
+            # int_gs = Cs*(lambd_ps+H(lambd_ps+lambd_ls)+H(lambd_ps+lambd_rs) \
+            #                      -H(lambd_ls)-H(lambd_rs))
+
+
+            int_gs = np.zeros_like(alphas)
+            for i in range(2):
+                for j in range(alphas.shape[1]):
+                    H1 = H(lambd_ps+lambd_ls, i, j)
+                    H2 = H(lambd_ps+lambd_rs, i, j)
+                    H3 = H(lambd_ls, i, j)
+                    H4 = H(lambd_rs, i, j)
+                    int_gs[i,j] = Cs[i,j]*(lambd_ps[i]+H1+H2-H3-H4)
+
+            weight = (lambd_ps[1]-lambd_p)/(lambd_ps[1]-lambd_ps[0])
+            print("weight:", weight)
+            int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
+
         eta = -eta
         func = interp1d(etas, int_gs)
         I = I0*species.debye*func(eta)
-
-    elif interpolate.lower() == 'i2':
 
     else:
         raise ValueError("interpolate must be either 'g' or 'I'")
