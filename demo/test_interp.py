@@ -13,7 +13,7 @@ geo = Cylinder(l=40e-3, r=1e-3, lguard=0.077)
 # geo = Cylinder(l=5e-3, r=1e-3, lguard=100e-3)
 geo = Cylinder(l=10*elec.debye, r=1e-3, lguard=200*elec.debye)
 # geo = Cylinder(l=600.0*elec.debye, r=1e-3, lguard=0.0*elec.debye)
-etas = np.linspace(10,100,100)
+etas = np.linspace(-10,100,100)
 
 # Is = finite_length_current(geo, elec, eta=etas)
 # plt.plot(etas, Is)

@@ -196,7 +196,9 @@ def finite_length_current(geometry, species,
         Whether to interpolate the coefficients of the profile function g and
         then integrate g to get the current (faster), or if g is integrated it
         its present grid to get a grid of currents which can be interpolated
-        from. This makes the interpolation linear in I.
+        from. This makes the interpolation linear in I, and avoids the
+        irregular behaviour sometimes experienced for shorter probes due to
+        irregularities in the coefficients.
 
     Returns
     -------
@@ -294,109 +296,44 @@ def finite_length_current(geometry, species,
             int_gs = Cs*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r) \
                                 -H(lambd_l)-H(lambd_r))
 
-        elif interpolate.lower() == 'i': # interpolate between two lambdas
+        else: # interpolate between lambdas
 
-            print("interpolates")
+            As       = file['As'][ind:ind+2]
+            Cs       = file['Cs'][ind:ind+2]
+            alphas   = file['alphas'][ind:ind+2]
+            deltas   = file['deltas'][ind:ind+2]
 
-            lambds = lambds[ind:ind+2]
-            As     = file['As'][ind:ind+2]
-            Cs     = file['Cs'][ind:ind+2]
-            alphas = file['alphas'][ind:ind+2]
-            deltas = file['deltas'][ind:ind+2]
-
-            print("segments:", lambd_l, lambd_p, lambd_r, lambd_l+lambd_p+lambd_r)
-            print("lambd_ts:", lambds)
-            lambd_ps = lambds-lambd_l-lambd_r
-            print("lambd_ps:", lambd_ps)
-
-            if lambd_ps[0]<0:
-                # Probe segment can't be shorter than zero.
-                # Let it be zero, and (rightly) let it collect zero current.
-                lambd_ps[0] = 0
-                lambds[0] = lambd_l+lambd_r
-                Cs[0] = 0
-
-            # def H(zetas):
-            #     # if zetas==float('inf'): return np.zeros_like(alphas)
-            #     # return As*(alphas*(deltas-zetas)-2)*np.exp(-alphas*zetas)/alphas**2
-            #     res = np.zeros_like(alphas)
-            #     ind = np.where(zetas!=float('inf'))[0]
-            #     res[ind] = As[ind]*(alphas[ind]*(deltas[ind].T-zetas[ind]).T-2) \
-            #                       *np.exp(-(alphas[ind].T*zetas[ind]).T)/alphas[ind]**2
-            #     return res
-
-            # def H(zetas):
-            #     res = np.zeros_like(alphas)
-            #     for i in range(2):
-            #         for j in range(alphas.shape[1]):
-            #             res[i,j] = As[i,j]*(alphas[i,j]*(deltas[i,j]-zetas[i])-2) \
-            #                               *np.exp(-alphas[i,j]*zetas[i])/alphas[i,j]**2
-            #     return res
-
-            def H(zetas, i, j):
-                res = As[i,j]*(alphas[i,j]*(deltas[i,j]-zetas[i])-2) \
-                                  *np.exp(-alphas[i,j]*zetas[i])/alphas[i,j]**2
-                return res
-
-            lambd_l = np.array([lambd_l, lambd_l])
-            lambd_r = np.array([lambd_r, lambd_r])
-
-            int_gs = np.zeros_like(alphas)
-            for i in range(2):
-                for j in range(alphas.shape[1]):
-                    H1 = H(lambd_ps+lambd_l, i, j)
-                    H2 = H(lambd_ps+lambd_r, i, j)
-                    H3 = H(lambd_l, i, j)
-                    H4 = H(lambd_r, i, j)
-                    int_gs[i,j] = Cs[i,j]*(lambd_ps[i]+H1+H2-H3-H4)
-
-            # int_gs = Cs*(lambd_ps+H(lambd_ps+lambd_l)+H(lambd_ps+lambd_r) \
-            #                      -H(lambd_l)-H(lambd_r))
-
-            weight = (lambd_ps[1]-lambd_p)/(lambd_ps[1]-lambd_ps[0])
-            print("weight:", weight)
-            int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
-
-        else:
-
-            print("interpolates")
-
-            lambds = lambds[ind:ind+2]
-            As     = file['As'][ind:ind+2]
-            Cs     = file['Cs'][ind:ind+2]
-            alphas = file['alphas'][ind:ind+2]
-            deltas = file['deltas'][ind:ind+2]
-
-            lambd_t = lambd_l+lambd_p+lambd_r
-            lambd_ts = lambds
+            # if interpolate.lower() == 'i2':
+            lambd_ts = lambds[ind:ind+2]
             lambd_ls = lambd_l*lambd_ts/lambd_t
             lambd_ps = lambd_p*lambd_ts/lambd_t
             lambd_rs = lambd_r*lambd_ts/lambd_t
 
-            print("segments (1):", lambd_ls[0], lambd_ps[0], lambd_rs[0], lambd_ts[0])
-            print("segments:",     lambd_l, lambd_p, lambd_r, lambd_t)
-            print("segments (2):", lambd_ls[1], lambd_ps[1], lambd_rs[1], lambd_ts[1])
+            # else:
+            #     lambd_ts = lambds[ind:ind+2]
+            #     lambd_ps = lambd_ts-lambd_l-lambd_r
+            #     lambd_ls = np.array([lambd_l, lambd_l])
+            #     lambd_rs = np.array([lambd_r, lambd_r])
 
-            def H(zetas, i, j):
-                res = As[i,j]*(alphas[i,j]*(deltas[i,j]-zetas[i])-2) \
-                                  *np.exp(-alphas[i,j]*zetas[i])/alphas[i,j]**2
-                return res
+            #     if lambd_ps[0]<0:
+            #         # Probe segment can't be shorter than zero.
+            #         # Let it be zero, and (rightly) let it collect zero current.
+            #         lambd_ps[0] = 0
+            #         lambd_ts[0] = lambd_l+lambd_r
+            #         Cs[0] = 0
+            #         print("WARNING")
 
-            # int_gs = Cs*(lambd_ps+H(lambd_ps+lambd_ls)+H(lambd_ps+lambd_rs) \
-            #                      -H(lambd_ls)-H(lambd_rs))
+            def H(zetas):
+                return As*(alphas*(deltas-zetas[:,None])-2) \
+                         *np.exp(-alphas*zetas[:,None])/alphas**2
 
-
-            int_gs = np.zeros_like(alphas)
-            for i in range(2):
-                for j in range(alphas.shape[1]):
-                    H1 = H(lambd_ps+lambd_ls, i, j)
-                    H2 = H(lambd_ps+lambd_rs, i, j)
-                    H3 = H(lambd_ls, i, j)
-                    H4 = H(lambd_rs, i, j)
-                    int_gs[i,j] = Cs[i,j]*(lambd_ps[i]+H1+H2-H3-H4)
+            int_gs = Cs*( lambd_ps[:,None]     \
+                         +H(lambd_ps+lambd_ls) \
+                         +H(lambd_ps+lambd_rs) \
+                         -H(lambd_ls)          \
+                         -H(lambd_rs))
 
             weight = (lambd_ps[1]-lambd_p)/(lambd_ps[1]-lambd_ps[0])
-            print("weight:", weight)
             int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
 
         eta = -eta
