@@ -210,7 +210,17 @@ def test_current_interpolated_samples():
 
     for l, eta, If in zip(ls, etas, Ifs):
         geo = Cylinder(r=r, l=l)
-        I = finite_length_current(geo, elec, eta=-eta)
+        I = finite_length_current(geo, elec, eta=-eta, interpolate='g')
+        assert I == approx(If)
+
+    # Ground truth with linear interpolation in I
+    Ifs = np.array([-5.951577246367211e-06,
+                    -1.9530626386338544e-06,
+                    -0.00014358695303707134])
+
+    for l, eta, If in zip(ls, etas, Ifs):
+        geo = Cylinder(r=r, l=l)
+        I = finite_length_current(geo, elec, eta=-eta, interpolate='I')
         assert I == approx(If)
 
 def test_current_density_interpolated_samples():
@@ -248,6 +258,21 @@ def test_current_non_maxwellian(caplog):
     I = finite_length_current(geo, Species(n=35e10, T=1000, kappa=5), 3.0)
 
     assert(len(caplog.records) == 2)
+
+def test_current_invalid_interpolate(caplog):
+
+    elec = Species(n=35e10, eV=0.08)
+    geo = Cylinder(0.1*elec.debye, 10*elec.debye)
+
+    with pytest.raises(ValueError):
+        finite_length_current(geo, Species(n=35e10, T=1000), 3.0, interpolate='a')
+
+def test_current_too_high_eta(caplog):
+
+    elec = Species(n=35e10, eV=0.08)
+    geo = Cylinder(0.1*elec.debye, 10*elec.debye)
+    I = finite_length_current(geo, elec, eta=-111)
+    assert(len(caplog.records) == 1)
 
 def test_current_density_non_maxwellian(caplog):
 

@@ -24,7 +24,7 @@ from langmuir.analytical import *
 from langmuir.geometry import *
 from langmuir.species import *
 from langmuir.misc import *
-from scipy.interpolate import griddata, RectBivariateSpline
+from scipy.interpolate import griddata, RectBivariateSpline, interp1d
 from scipy.constants import value as constants
 from copy import deepcopy
 import numpy as np
@@ -166,7 +166,8 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
             return i[0][0]
 
 def finite_length_current(geometry, species,
-                          V=None, eta=None, normalization=None):
+                          V=None, eta=None, normalization=None,
+                          interpolate='I'):
     """
     Current collected by a cylindrical probe according to the Marholm-Marchand
     finite-length model. Assumes small radius compared to the Debye length.
@@ -187,9 +188,17 @@ def finite_length_current(geometry, species,
         charge and temperature and k is Boltzmann's constant.
 
     normalization: 'th', 'thmax', 'oml', None
-        Wether to normalize the output current by, respectively, the thermal
+        Whether to normalize the output current by, respectively, the thermal
         current, the Maxwellian thermal current, the OML current, or not at
         all, i.e., current in [A/m].
+
+    interpolate: 'I', 'g'
+        Whether to interpolate the coefficients of the profile function g and
+        then integrate g to get the current (faster), or if g is integrated it
+        its present grid to get a grid of currents which can be interpolated
+        from. This makes the interpolation linear in I, and avoids the
+        irregular behaviour sometimes experienced for shorter probes due to
+        irregularities in the coefficients.
 
     Returns
     -------
@@ -224,6 +233,9 @@ def finite_length_current(geometry, species,
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
+    if(np.any(eta<-100.)):
+        logger.warning('Finite-length theory yields erroneous results for eta<-100')
+
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
@@ -231,8 +243,6 @@ def finite_length_current(geometry, species,
     lambd_l = geometry.lguard/species.debye # Normalized left guard length
     lambd_r = geometry.rguard/species.debye # Normalized right guard length
     lambd_t = lambd_l + lambd_p + lambd_r   # Normalized total length
-
-    C, A, alpha, delta = get_lerped_coeffs(lambd_t, eta)
 
     if normalization is None: # I0 = I_OML => I = I_OML * integral of g = actual current
         geonorm = deepcopy(geometry)
@@ -251,12 +261,99 @@ def finite_length_current(geometry, species,
     else:
         raise ValueError('Normalization not supported: {}'.format(normalization))
 
-    def H(zeta):
-        if zeta==float('inf'): return np.zeros_like(alpha)
-        return A*(alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
+    if interpolate.lower() == 'g':
+        C, A, alpha, delta = get_lerped_coeffs(lambd_t, eta)
 
-    int_g = C*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r)-H(lambd_l)-H(lambd_r))
-    I = I0*species.debye*int_g
+        def H(zeta):
+            if zeta==float('inf'): return np.zeros_like(alpha)
+            return A*(alpha*(delta-zeta)-2)*np.exp(-alpha*zeta)/alpha**2
+
+        int_g = C*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r)-H(lambd_l)-H(lambd_r))
+        I = I0*species.debye*int_g
+
+    elif interpolate.lower() in ['i', 'i2']:
+
+        fname = os.path.join(os.path.dirname(os.path.abspath(__file__)),'params_structured.npz')
+        file = np.load(fname)
+
+        lambds = file['lambds']
+        etas = file['etas']
+
+        ind = np.where(lambds<lambd_t)[0][-1]
+
+        if ind==len(lambds)-1: # extrapolate from highest lambda
+
+            lambds = lambds[ind]
+            As     = file['As'][ind]
+            Cs     = file['Cs'][ind]
+            alphas = file['alphas'][ind]
+            deltas = file['deltas'][ind]
+
+            def H(zeta):
+                res = np.zeros_like(alphas)
+                if(zeta==float('inf')):
+                    return np.zeros_like(alphas)
+                else:
+                    return As*(alphas*(deltas-zeta)-2)*np.exp(-alphas*zeta)/alphas**2
+
+            int_gs = Cs*(lambd_p+H(lambd_p+lambd_l)+H(lambd_p+lambd_r) \
+                                -H(lambd_l)-H(lambd_r))
+
+        else: # interpolate between lambdas
+
+            As       = file['As'][ind:ind+2]
+            Cs       = file['Cs'][ind:ind+2]
+            alphas   = file['alphas'][ind:ind+2]
+            deltas   = file['deltas'][ind:ind+2]
+
+            # Stretch whole probe, including guards
+            lambd_ts = lambds[ind:ind+2]
+            lambd_ls = lambd_l*lambd_ts/lambd_t
+            lambd_ps = lambd_p*lambd_ts/lambd_t
+            lambd_rs = lambd_r*lambd_ts/lambd_t
+
+            # Stretch only probe segment, constant guards
+            # lambd_ts = lambds[ind:ind+2]
+            # lambd_ps = lambd_ts-lambd_l-lambd_r
+            # lambd_ls = np.array([lambd_l, lambd_l])
+            # lambd_rs = np.array([lambd_r, lambd_r])
+
+            # if lambd_ps[0]<0:
+            #     # Probe segment can't be shorter than zero.
+            #     # Let it be zero, and (rightly) let it collect zero current.
+            #     lambd_ps[0] = 0
+            #     lambd_ts[0] = lambd_l+lambd_r
+            #     Cs[0] = 0
+            #     print("WARNING")
+
+            def H(zetas):
+                return As*(alphas*(deltas-zetas[:,None])-2) \
+                         *np.exp(-alphas*zetas[:,None])/alphas**2
+
+            int_gs = Cs*( lambd_ps[:,None]     \
+                         +H(lambd_ps+lambd_ls) \
+                         +H(lambd_ps+lambd_rs) \
+                         -H(lambd_ls)          \
+                         -H(lambd_rs))
+
+            weight = (lambd_ps[1]-lambd_p)/(lambd_ps[1]-lambd_ps[0])
+            int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
+
+        eta = -eta
+        attracted = np.where(eta>=0.)[0]
+        repelled  = np.where(eta< 0.)[0]
+        over      = np.where(eta>100.)[0]
+
+        eta[over] = 100
+
+        I = I0*species.debye*np.ones_like(eta)
+        func = interp1d(etas, int_gs)
+
+        I[attracted] *= func(eta[attracted])
+        I[repelled]  *= lambd_p
+
+    else:
+        raise ValueError("interpolate must be either 'g' or 'I'")
 
     return I if eta_isarray else I[0]
 
@@ -339,13 +436,13 @@ def get_lerped_coeffs_new(lambd, eta):
     lambd_coeff = min(lambd, max_lambd)
 
     # Make repelled species identical to OML through these coefficients
-    C = np.ones_like(eta)
-    A = np.zeros_like(eta)
+    C     = np.ones_like(eta)
+    A     = np.zeros_like(eta)
     alpha = np.ones_like(eta)
     delta = np.ones_like(eta)
 
     # Tabulated values contains datapoints as described in paper
-    ind = np.where(eta>0)[0]
+    ind = np.where(eta>0.0)[0]
     C[ind] = lerp_C(lambd_coeff, eta[ind], grid=False)
     A[ind] = lerp_A(lambd_coeff, eta[ind], grid=False)
     alpha[ind] = lerp_alpha(lambd_coeff, eta[ind], grid=False)
