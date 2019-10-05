@@ -11,9 +11,15 @@ Langmuir
     :target: https://pypi.org/project/langmuir
 
 .. image:: https://zenodo.org/badge/149759145.svg
-   :target: https://zenodo.org/badge/latestdoi/149759145
+    :target: https://zenodo.org/badge/latestdoi/149759145
 
-Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes.
+.. image:: https://readthedocs.org/projects/langmuir/badge/?version=latest
+    :target: https://langmuir.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes. See documentation on ReadTheDocs_.
+
+.. _ReadTheDocs: http://langmuir.readthedocs.io
 
 Installation
 ------------
