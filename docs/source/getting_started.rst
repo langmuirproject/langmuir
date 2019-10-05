@@ -1,32 +1,5 @@
-Langmuir
-========
-
-.. image:: https://travis-ci.com/langmuirproject/langmuir.svg?branch=master
-    :target: https://travis-ci.com/langmuirproject/langmuir
-
-.. image:: https://coveralls.io/repos/github/langmuirproject/langmuir/badge.svg?branch=master
-    :target: https://coveralls.io/github/langmuirproject/langmuir?branch=master
-
-.. image:: https://img.shields.io/pypi/pyversions/langmuir.svg
-    :target: https://pypi.org/project/langmuir
-
-.. image:: https://zenodo.org/badge/149759145.svg
-   :target: https://zenodo.org/badge/latestdoi/149759145
-
-Programmatically accessible current-voltage characteristics for ideal and non-ideal Langmuir probes.
-
-Installation
-------------
-Install from PyPI using ``pip`` (preferred method)::
-
-    pip install langmuir
-
-Or download the GitHub repository https://github.com/langmuirproject/langmuir.git and run::
-
-    python setup.py install
-
 Getting Started
----------------
+===============
 The Langmuir library contains a collection of functions that compute the current collected by a Langmuir probe according to various theories and models. These functions take as arguments the probe geometry, for instance ``Cylinder``, and a plasma, where a plasma may consist of one or more ``Species``.
 
 As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The plasma consists of electrons and singly charged oxygen ions, both with a density of 1e11 and a temperature of 1000K. The current-voltage charactersitic according to OML theory is easily computed and plotted::
