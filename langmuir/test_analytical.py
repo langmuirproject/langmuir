@@ -106,8 +106,8 @@ def test_normalization_current():
 def test_normalization_current_multiple_species():
     cyl = Cylinder(1e-3,10e-3)
     plasma = []
-    plasma.append(Species('electron', n=1e11, T=1000))
-    plasma.append(Species('proton',   n=1e11, T=1000))
+    plasma.append(Electron())
+    plasma.append(Proton())
     I0_n = normalization_current(cyl, plasma[0])
     I0_p = normalization_current(cyl, plasma[1])
     assert(normalization_current(cyl, plasma) == approx(I0_n+I0_p))

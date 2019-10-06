@@ -42,17 +42,17 @@ def test_species_defaults():
     assert(s.kappa == float('inf'))
 
 def test_species_electron():
-    s = Species('electron', n=1e11, T=1000)
+    s = Electron()
     assert(s.m == approx(constants('electron mass')))
     assert(s.q == approx(-constants('elementary charge')))
 
 def test_species_proton():
-    s = Species('proton', n=1e11, T=1000)
+    s = Proton()
     assert(s.m == approx(constants('proton mass')))
     assert(s.q == approx(constants('elementary charge')))
 
 def test_species_positron():
-    s = Species('positron', n=1e11, T=1000)
+    s = Positron()
     assert(s.m == approx(constants('electron mass')))
     assert(s.q == approx(constants('elementary charge')))
 
@@ -106,7 +106,7 @@ def test_species_eV():
 def test_species_repr():
     # A good representation of a (small) object is one you can use to recreate
     # the object
-    s  = Species('kappa-cairns', q=1, m=3, n=1000, T=1000, kappa=6, alpha=0.2)
+    s  = Species(q=1, m=3, n=1000, T=1000, kappa=6, alpha=0.2)
     s2 = eval(str(s))
     assert(s2.q == approx(s.q))
     assert(s2.m == approx(s.m))
@@ -137,9 +137,9 @@ def test_species_convenience_methods():
 
 def test_species_debye_length():
     sp_m = Species(n=1e11, T=1000)
-    sp_k = Species('kappa', n=1e11, T=1000, kappa=4)
-    sp_a = Species('cairns', n=1e11, T=1000, alpha=0.2)
-    sp_ka = Species('kappa-cairns', n=1e11, T=1000, kappa=4, alpha=0.2)
+    sp_k = Species(n=1e11, T=1000, kappa=4)
+    sp_a = Species(n=1e11, T=1000, alpha=0.2)
+    sp_ka = Species(n=1e11, T=1000, kappa=4, alpha=0.2)
     assert(sp_m.debye == approx(6.900896931e-03))
     assert(sp_k.debye == approx(0.0058323223992018209))
     assert(sp_a.debye == approx(0.010911276093510305))
@@ -147,8 +147,8 @@ def test_species_debye_length():
 
 def test_debye():
     plasma = []
-    plasma.append(Species('electron', n=1e11, T=1000))
-    plasma.append(Species('proton',   n=1e11, T=1000))
+    plasma.append(Electron(n=1e11, T=1000))
+    plasma.append(Proton(n=1e11, T=1000))
     assert(debye(plasma[0])==plasma[0].debye)
     assert(debye(plasma) == approx(0.004879671013271479))
 

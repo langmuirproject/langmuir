@@ -40,11 +40,11 @@ current_models = [
 
 @pytest.fixture
 def electron():
-    return Species(n=1e11, T=1000)
+    return Electron()
 
 @pytest.fixture
 def proton():
-    return Species('proton', n=1e11, T=1000)
+    return Proton()
 
 @pytest.mark.parametrize("current", current_models)
 def test_multiple_species(current, electron, proton):

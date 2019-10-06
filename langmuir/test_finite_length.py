@@ -26,7 +26,7 @@ import pytest
 
 @pytest.fixture
 def electron():
-    return Species(n=1e11, T=1000)
+    return Electron()
 
 @pytest.fixture
 def eta_fl():

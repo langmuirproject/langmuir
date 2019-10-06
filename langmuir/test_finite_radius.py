@@ -29,7 +29,7 @@ import pytest
 
 @pytest.fixture
 def electron():
-    return Species(n=1e11, T=1000)
+    return Electron()
 
 def test_laframboise_sphere(electron):
     I = finite_radius_current(Sphere(electron.debye), electron, eta=0.6,
@@ -164,13 +164,13 @@ def test_discard_spectral_indices(caplog):
 
 def test_discard_repelled_particles(caplog):
 
-    electron = Species(n=1e11, T=1000)
+    electron = Electron()
     I = finite_radius_current(Sphere(electron.debye), electron, eta=[1,-1])
     assert(len(caplog.records) == 1)
     assert('negative' in caplog.text)
     assert('positive' not in caplog.text)
 
-    ion = Species('proton', n=1e11, T=1000)
+    ion = Proton()
     I = finite_radius_current(Sphere(ion.debye), ion, eta=[1,-1])
     assert(len(caplog.records) == 2)
     assert('positive' in caplog.text)

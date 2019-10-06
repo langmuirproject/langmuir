@@ -32,29 +32,23 @@ class Species(object):
     Examples::
 
         >>> # Maxwellian electrons with density 1e11 m^(-3) and 1000 K
-        >>> species = Species(n=1e11, T=1000)
+        >>> species = Electron(n=1e11, T=1000)
 
         >>> # Kappa-distributed electrons with kappa=2
-        >>> species = Species(n=1e11, T=1000, kappa=2)
+        >>> species = Electron(n=1e11, T=1000, kappa=2)
 
         >>> # Doubly charged Maxwellain Oxygen ions with 0.26 eV
         >>> species = Species(Z=2, amu=16, n=1e11, eV=0.26)
 
         >>> # Kappa-Cairns-distributed protons with kappa = 5 and alpha=0.2
-        >>> species = Species('proton', n=1e11, T=1000, kappa=5, alpha=0.2)
+        >>> species = Proton(n=1e11, T=1000, kappa=5, alpha=0.2)
 
     A plasma is fully specified by a list of species. E.g. for a Maxwellian
     electron-proton plasma::
 
         >>> plasma = []
-        >>> plasma.append(Species('electron', n=1e11, T=1000))
-        >>> plasma.append(Species('proton',   n=1e11, T=1000))
-
-    Flags:
-    ------
-    'electron'     : Elecron species (default)
-    'proton'       : Proton species
-    'positron'     : Positron species
+        >>> plasma.append(Electron(n=1e11, T=1000))
+        >>> plasma.append(Proton(n=1e11, T=1000))
 
     Keyword parameters:
     -------------------
@@ -70,59 +64,54 @@ class Species(object):
     alpha : spectral index alpha for Cairns and Kappa-Cairns distribution
     """
 
-    def __init__(self, *args, **kwargs):
+    def_Z   = -1
+    def_amu = constants('electron mass')/constants('atomic mass constant')
+
+    def __init__(self, **kwargs):
 
         e    = constants('elementary charge')
-        me   = constants('electron mass')
-        mp   = constants('proton mass')
         k    = constants('Boltzmann constant')
         eps0 = constants('electric constant')
         amu  = constants('atomic mass constant')
 
         if 'Z' in kwargs:
             self.q = kwargs['Z']*e
+        elif 'q' in kwargs:
+            self.q = kwargs['q']
         else:
-            self.q = kwargs.pop('q', -e)
+            self.q = self.def_Z*e
 
         if 'amu' in kwargs:
             self.m = kwargs['amu']*amu
+        elif 'm' in kwargs:
+            self.m = kwargs['m']
         else:
-            self.m = kwargs.pop('m', me)
-
-        for arg in args:
-            if arg.lower()=='proton':
-                self.q = e
-                self.m = mp
-
-            if arg.lower()=='positron':
-                self.q = e
-                self.m = me
-
-        self.Z = self.q/e
-        self.amu = self.m/amu
-
-        self.n = kwargs['n']
+            self.m = self.def_amu*amu
 
         if 'eV' in kwargs:
             self.T = kwargs['eV']*e/k
         elif 'vth' in kwargs:
             self.T = self.m*kwargs['vth']**2/k
-        else:
+        elif 'T' in kwargs:
             self.T = kwargs['T']
+        else:
+            self.T = 1000
 
         if self.T<0:
             self.T=0
             logger.warning('Negative temperature interpreted as zero')
 
+        self.n     = kwargs.pop('n', 1e11)
+        self.alpha = kwargs.pop('alpha', 0)
+        self.kappa = kwargs.pop('kappa', float('inf'))
 
-        self.vth = np.sqrt(k*self.T/self.m)
+        self.Z = self.q/e
+        self.amu = self.m/amu
         self.eV  = self.T*k/e
+        self.vth = np.sqrt(k*self.T/self.m)
         self.omega_p = np.sqrt(self.q**2*self.n/(eps0*self.m))
         self.freq_p = self.omega_p/(2*np.pi)
         self.period_p = 1/self.freq_p
-
-        self.alpha = kwargs.pop('alpha', 0)
-        self.kappa = kwargs.pop('kappa', float('inf'))
 
         if self.kappa == float('inf'):
             self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((1.0 + 15.0*self.alpha)/(1.0 + 3.0*self.alpha))
@@ -178,3 +167,9 @@ def debye(species):
     if not isinstance(species, list):
         species = [species]
     return sum([s.debye**(-2) for s in species])**(-0.5)
+
+class Electron(Species): pass
+class Proton(Species): def_Z = 1; def_amu = 1
+class Positron(Species): def_Z = 1
+class Antiproton(Species): def_amu = 1
+class Vogon(Species): def_Z = 1j
