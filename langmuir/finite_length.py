@@ -96,7 +96,7 @@ def finite_length_current_density(geometry, species, V=None, eta=None,
     if V is not None:
         eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
-        eta = q*V/(k*T) # V must be array (not list) to allow this
+        eta = -q*V/(k*T) # V must be array (not list) to allow this
     else:
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
@@ -228,13 +228,13 @@ def finite_length_current(geometry, species,
     if V is not None:
         eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
-        eta = q*V/(k*T)
+        eta = -q*V/(k*T)
     else:
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
 
-    if(np.any(eta<-100.)):
-        logger.warning('Finite-length theory yields erroneous results for eta<-100')
+    if(np.any(eta>100.)):
+        logger.warning('Finite-length theory yields erroneous results for eta>100')
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
@@ -339,7 +339,6 @@ def finite_length_current(geometry, species,
             weight = (lambd_ps[1]-lambd_p)/(lambd_ps[1]-lambd_ps[0])
             int_gs = weight*int_gs[0] + (1-weight)*int_gs[1]
 
-        eta = -eta
         attracted = np.where(eta>=0.)[0]
         repelled  = np.where(eta< 0.)[0]
         over      = np.where(eta>100.)[0]
@@ -430,7 +429,6 @@ lerp_delta = lerper('delta')
 max_lambd = get_max_lambd()
 
 def get_lerped_coeffs_new(lambd, eta):
-    eta = -eta
 
     # Extrapolate for larger lambda by using the largest available
     lambd_coeff = min(lambd, max_lambd)

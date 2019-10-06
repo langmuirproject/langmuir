@@ -125,31 +125,31 @@ def test_OML_current_cairns():
     # Cylindrical geometry
     geo = Cylinder(0.255e-3, 25e-3)
     # Attracted particles - Cairns VDF
-    I = OML_current(geo, sp, eta=-5)
+    I = OML_current(geo, sp, eta=5)
     assert(I == approx(-9.3492e-8))
     #  Attracted particles - Maxwellian VDF
-    I = OML_current(geo, sp_m, eta=-5)
+    I = OML_current(geo, sp_m, eta=5)
     assert(I == approx(-8.68504e-8))
     # Repelled particles - Cairns VDF
-    I = OML_current(geo, sp, eta=5)
+    I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-2.21933e-9))
     # Repelled particles - Maxwellian VDF
-    I = OML_current(geo, sp_m, eta=5)
+    I = OML_current(geo, sp_m, eta=-5)
     assert(I == approx(-2.12376e-10))
 
     # Spherical geometry
     geo = Sphere(0.255e-3)
     # Attracted particles - Cairns VDF
-    I = OML_current(geo, sp, eta=-5)
+    I = OML_current(geo, sp, eta=5)
     assert(I == approx(-3.02208e-9))
     # Attracted particles - Maxwellian VDF
-    I = OML_current(geo, sp_m, eta=-5)
+    I = OML_current(geo, sp_m, eta=5)
     assert(I == approx(-3.85797e-9))
     # Repelled particles - Cairns VDF
-    I = OML_current(geo, sp, eta=5)
+    I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-4.52743e-11))
     # Repelled particles - Maxwellian VDF
-    I = OML_current(geo, sp_m, eta=5)
+    I = OML_current(geo, sp_m, eta=-5)
     assert(I == approx(-4.33247e-12))
 
 def test_OML_current_kappa_cairns():
@@ -159,29 +159,29 @@ def test_OML_current_kappa_cairns():
     # Cylindrical geometry
     geo = Cylinder(0.255e-3, 25e-3)
     # Attracted particles - Kappa-Cairns VDF
-    I = OML_current(geo, sp, eta=-5)
+    I = OML_current(geo, sp, eta=5)
     assert(I == approx(-1.19482e-07))
     # Attracted particles - Kappa VDF
-    I = OML_current(geo, sp_k, eta=-5)
+    I = OML_current(geo, sp_k, eta=5)
     assert(I == approx(-8.66487e-08))
     # Repelled particles - Kappa-Cairns VDF
-    I = OML_current(geo, sp, eta=5)
+    I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-3.9989e-8))
     # Repelled particles - Kappa VDF
-    I = OML_current(geo, sp_k, eta=5)
+    I = OML_current(geo, sp_k, eta=-5)
     assert(I == approx(-1.1108e-9))
 
     # Spherical geometry
     geo = Sphere(0.255e-3)
     # Attracted particles - Kappa-Cairns VDF
-    I = OML_current(geo, sp, eta=-5)
+    I = OML_current(geo, sp, eta=5)
     assert(I == approx(-3.2631e-9))
     # Attracted particles - Kappa VDF
-    I = OML_current(geo, sp_k, eta=-5)
+    I = OML_current(geo, sp_k, eta=5)
     assert(I == approx(-4.28282e-9))
     # Repelled particles - Kappa-Cairns VDF
-    I = OML_current(geo, sp, eta=5)
+    I = OML_current(geo, sp, eta=-5)
     assert(I == approx(-8.15775e-10))
     # Repelled particles - Kappa VDF
-    I = OML_current(geo, sp_k, eta=5)
+    I = OML_current(geo, sp_k, eta=-5)
     assert(I == approx(-2.26604e-11))

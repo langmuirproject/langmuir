@@ -124,7 +124,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
 
     if V is not None:
         V = make_array(V)
-        eta = q*V/(k*T)
+        eta = -q*V/(k*T)
     else:
         eta = make_array(eta)
 
@@ -132,8 +132,8 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
 
     I = np.zeros_like(eta)
 
-    indices_n = np.where(eta > 0)[0]   # indices for repelled particles
-    indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
+    indices_n = np.where(eta < 0)[0]   # indices for repelled particles
+    indices_p = np.where(eta >= 0)[0]  # indices for attracted particles
 
     if normalization is None:
         I0 = normalization_current(geometry, species)

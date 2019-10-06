@@ -34,22 +34,22 @@ import pytest
 
 def test_laframboise_sphere():
     t = get_table('laframboise sphere')
-    assert(np.allclose(get_coords_and_value(t, 4, 3), [1, -0.6, 1.595]))
+    assert(np.allclose(get_coords_and_value(t, 4, 3), [1, 0.6, 1.595]))
 
 def test_laframboise_cylinder():
     t = get_table('laframboise cylinder')
-    assert(np.allclose(get_coords_and_value(t, 5, 6), [3, -2.0, 1.928]))
+    assert(np.allclose(get_coords_and_value(t, 5, 6), [3, 2.0, 1.928]))
 
 def test_darian_marholm_uncomplete_sphere():
     t = get_table('darian-marholm uncomplete sphere')
 
     # Testing one for each alpha/kappa table
-    assert(np.allclose(get_coords_and_value(t, 0, 0, 2, 1), [0,   0  , 2, -1, 1.958]))
-    assert(np.allclose(get_coords_and_value(t, 0, 1, 2, 1), [0,   0.2, 2, -1, 2.069]))
-    assert(np.allclose(get_coords_and_value(t, 1, 0, 2, 1), [1/6, 0  , 2, -1, 1.982]))
-    assert(np.allclose(get_coords_and_value(t, 1, 1, 2, 1), [1/6, 0.2, 2, -1, 2.369]))
-    assert(np.allclose(get_coords_and_value(t, 2, 0, 2, 1), [1/4, 0  , 2, -1, 1.990]))
-    assert(np.allclose(get_coords_and_value(t, 2, 1, 2, 1), [1/4, 0.2, 2, -1, 2.846]))
+    assert(np.allclose(get_coords_and_value(t, 0, 0, 2, 1), [0,   0  , 2, 1, 1.958]))
+    assert(np.allclose(get_coords_and_value(t, 0, 1, 2, 1), [0,   0.2, 2, 1, 2.069]))
+    assert(np.allclose(get_coords_and_value(t, 1, 0, 2, 1), [1/6, 0  , 2, 1, 1.982]))
+    assert(np.allclose(get_coords_and_value(t, 1, 1, 2, 1), [1/6, 0.2, 2, 1, 2.369]))
+    assert(np.allclose(get_coords_and_value(t, 2, 0, 2, 1), [1/4, 0  , 2, 1, 1.990]))
+    assert(np.allclose(get_coords_and_value(t, 2, 1, 2, 1), [1/4, 0.2, 2, 1, 2.846]))
 
     # Testing that V=0 is the inaccurate one and that R=0 doesn't exist
     assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 0), [0, 0, 0.2, 0, 0.965]))
@@ -58,12 +58,12 @@ def test_darian_marholm_uncomplete_cylinder():
     t = get_table('darian-marholm uncomplete cylinder')
 
     # Testing one for each alpha/kappa table
-    assert(np.allclose(get_coords_and_value(t, 0, 0, 2, 1), [0,   0  , 3, -1, 1.538]))
-    assert(np.allclose(get_coords_and_value(t, 0, 1, 2, 1), [0,   0.2, 3, -1, 1.914]))
-    assert(np.allclose(get_coords_and_value(t, 1, 0, 2, 1), [1/6, 0  , 3, -1, 1.509]))
-    assert(np.allclose(get_coords_and_value(t, 1, 1, 2, 1), [1/6, 0.2, 3, -1, 2.165]))
-    assert(np.allclose(get_coords_and_value(t, 2, 0, 2, 1), [1/4, 0  , 3, -1, 1.510]))
-    assert(np.allclose(get_coords_and_value(t, 2, 1, 2, 1), [1/4, 0.2, 3, -1, 2.547]))
+    assert(np.allclose(get_coords_and_value(t, 0, 0, 2, 1), [0,   0  , 3, 1, 1.538]))
+    assert(np.allclose(get_coords_and_value(t, 0, 1, 2, 1), [0,   0.2, 3, 1, 1.914]))
+    assert(np.allclose(get_coords_and_value(t, 1, 0, 2, 1), [1/6, 0  , 3, 1, 1.509]))
+    assert(np.allclose(get_coords_and_value(t, 1, 1, 2, 1), [1/6, 0.2, 3, 1, 2.165]))
+    assert(np.allclose(get_coords_and_value(t, 2, 0, 2, 1), [1/4, 0  , 3, 1, 1.510]))
+    assert(np.allclose(get_coords_and_value(t, 2, 1, 2, 1), [1/4, 0.2, 3, 1, 2.547]))
 
     # Testing that V=0 is the inaccurate one and that R=0 doesn't exist
     assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 0), [0, 0, 1.0, 0, 0.974]))
@@ -72,21 +72,21 @@ def test_darian_marholm_sphere():
     t = get_table('darian-marholm sphere')
 
     # Testing one from the uncomplete
-    assert(np.allclose(get_coords_and_value(t, 1, 0, 3, 1), [1/6, 0  , 2, -1, 1.982]))
+    assert(np.allclose(get_coords_and_value(t, 1, 0, 3, 1), [1/6, 0  , 2, 1, 1.982]))
 
     # Testing that V=0 is accurate one and that R=0 exists
     assert(np.allclose(get_coords_and_value(t, 0, 0, 1, 0), [0, 0, 0.2, 0, 1.0]))
-    assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 3), [0, 0, 0.0, -3, 4.0]))
+    assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 3), [0, 0, 0.0, 3, 4.0]))
 
 def test_darian_marholm_cylinder():
     t = get_table('darian-marholm cylinder')
 
     # Testing one for each alpha/kappa table
-    assert(np.allclose(get_coords_and_value(t, 1, 0, 3, 1), [1/6, 0  , 3, -1, 1.509]))
+    assert(np.allclose(get_coords_and_value(t, 1, 0, 3, 1), [1/6, 0  , 3, 1, 1.509]))
 
     # Testing that V=0 is accurate one and that R=0 exists
     assert(np.allclose(get_coords_and_value(t, 0, 0, 1, 0), [0, 0, 1.0, 0, 1.0]))
-    assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 3), [0, 0, 0.0, -3, 2.2417], rtol=1e-3))
+    assert(np.allclose(get_coords_and_value(t, 0, 0, 0, 3), [0, 0, 0.0, 3, 2.2417], rtol=1e-3))
 
 def test_laframboise_darian_marholm_sphere():
     t = get_table('laframboise-darian-marholm sphere')

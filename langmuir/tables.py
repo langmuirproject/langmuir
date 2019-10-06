@@ -130,7 +130,7 @@ def get_table(name, provide_points=True):
               [1.000, 1.094, 1.245, 1.402, 1.534, 1.632, 1.694, 1.762, 1.833, 1.891,  1.938,  2.022,  2.097,  2.166]]   # R=100
 
         Rs = np.array(Rs)
-        etas = -np.array(etas)
+        etas = np.array(etas)
         Is = np.array(Is)
 
         table = {'axes': (Rs, etas), 'values': Is}
@@ -158,7 +158,7 @@ def get_table(name, provide_points=True):
               [1.000, 1.0803, 1.194 , 1.314 , 1.409 , 1.478 , 1.518 , 1.561 , 1.599 , 1.628 , 1.650 , 1.686 , 1.719 , 1.747 ]]   # R=100
 
         Rs = np.array(Rs)
-        etas = -np.array(etas)
+        etas = np.array(etas)
         Is = np.array(Is)
 
         table = {'axes': (Rs, etas), 'values': Is}
@@ -262,7 +262,7 @@ def get_table(name, provide_points=True):
             ]]
 
         Rs = np.array(Rs)
-        etas = -np.array(etas)
+        etas = np.array(etas)
         kappa_recips = np.array(kappa_recips)
         alphas = np.array(alphas)
         Is = np.array(Is)
@@ -369,7 +369,7 @@ def get_table(name, provide_points=True):
             ]]
 
         Rs = np.array(Rs)
-        etas = -np.array(etas)
+        etas = np.array(etas)
         kappa_recips = np.array(kappa_recips)
         alphas = np.array(alphas)
         Is = np.array(Is)

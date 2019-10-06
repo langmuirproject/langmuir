@@ -180,7 +180,7 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
     if V is not None:
         eta_isarray = isinstance(V, (np.ndarray, list, tuple))
         V = make_array(V)
-        eta = q*V/(k*T)
+        eta = -q*V/(k*T)
     else:
         eta_isarray = isinstance(eta, (np.ndarray, list, tuple))
         eta = make_array(eta)
@@ -190,8 +190,8 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
     I = np.zeros_like(eta, dtype=float)
 
     eta[np.where(eta==0)] = np.finfo(float).eps # replace zeros with machine eps
-    indices_n = np.where(eta > 0)[0]   # indices for repelled particles
-    indices_p = np.where(eta <= 0)[0]  # indices for attracted particles
+    indices_n = np.where(eta < 0)[0]   # indices for repelled particles
+    indices_p = np.where(eta >= 0)[0]  # indices for attracted particles
 
     if kappa == float('inf'):
         C = 1.0
@@ -218,11 +218,11 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
 
         # repelled particles:
         if species.kappa == float('inf'):
-            I[indices_n] = I0 * C * D * np.exp(-eta[indices_n]) * (1. + E * eta[indices_n] * (eta[indices_n] + 4.))
+            I[indices_n] = I0 * C * D * np.exp(eta[indices_n]) * (1. + E * -eta[indices_n] * (-eta[indices_n] + 4.))
 
         else:
-            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
-                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
+            I[indices_n] = I0 * C * D * (1. - eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * (-eta[indices_n]) * (-eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
         # attracted particles:
         eta[indices_p] = np.abs(eta[indices_p])
@@ -233,12 +233,12 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
         # repelled particles:
         if species.kappa == float('inf'):
             I[indices_n] = I0 * C * D * \
-                np.exp(-eta[indices_n]) * (1. + E *
-                                           eta[indices_n] * (eta[indices_n] + 4.))
+                np.exp(eta[indices_n]) * (1. + E *
+                                           (-eta[indices_n]) * (-eta[indices_n] + 4.))
 
         else:
-            I[indices_n] = I0 * C * D * (1. + eta[indices_n] / (kappa - 1.5))**(
-                1. - kappa) * (1. + E * eta[indices_n] * (eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
+            I[indices_n] = I0 * C * D * (1. - eta[indices_n] / (kappa - 1.5))**(
+                1. - kappa) * (1. + E * (-eta[indices_n]) * (-eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
         # attracted particles:
         eta[indices_p] = np.abs(eta[indices_p])

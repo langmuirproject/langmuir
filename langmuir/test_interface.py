@@ -125,11 +125,11 @@ def test_eta(current, electron):
         e = constants('elementary charge')
         k = constants('Boltzmann constant')
         T = 1000
-        eta = -10
+        eta = 10
 
         geometry = Cylinder(r=electron.debye, l=10*electron.debye)
         I_eta = current(geometry, electron, eta=eta)
-        I_V   = current(geometry, electron, V=-eta*k*T/e)
+        I_V   = current(geometry, electron, V=eta*k*T/e)
 
         assert I_eta == approx(I_V)
 
@@ -139,7 +139,7 @@ def test_multiple_species_eta(current, electron, proton, caplog):
     args = getargspec(current).args
     if 'eta' in args:
 
-        I = current(Sphere(electron.debye), [electron, proton], eta=1)
+        I = current(Sphere(electron.debye), [electron, proton], eta=-1)
         assert(caplog.records[0].levelname == 'ERROR')
 
 @pytest.mark.parametrize("current", current_models)
@@ -213,7 +213,7 @@ def test_normalization_error(current, electron):
 
     args = getargspec(current).args
     kwargs = {}
-    if 'eta' in args: kwargs['eta'] = -1
+    if 'eta' in args: kwargs['eta'] = 1
     if 'normalization' in args:
         kwargs['normalization'] = 'Bullshit'
 
