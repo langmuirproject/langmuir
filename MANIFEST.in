@@ -1,1 +1,3 @@
 include .version
+recursive-include langmuir *
+recursive-include demo *
