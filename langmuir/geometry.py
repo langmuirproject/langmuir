@@ -41,6 +41,8 @@ class Cylinder(object):
         self.l = l
         self.lguard = lguard
         self.rguard = rguard
+        if self.lguard==True: self.lguard=float('inf')
+        if self.rguard==True: self.rguard=float('inf')
     def __repr__(self):
         return "Cylinder(r={}, l={}, lguard={}, rguard={})".format(self.r, self.l, self.lguard, self.rguard)
 
