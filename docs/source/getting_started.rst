@@ -1,29 +1,16 @@
 Getting Started
 ===============
-The Langmuir library contains a collection of functions that compute the current collected by a Langmuir probe according to various theories and models. These functions take as arguments the probe geometry, for instance ``Cylinder``, and a plasma, where a plasma may consist of one or more ``Species``.
+The Langmuir library contains a collection of functions that compute the current collected by a conductor immersed in a plasma according to various models. These functions take as arguments the probe geometry, for instance ``Sphere``, and a plasma, where a plasma may consist of one or more ``Species``.
 
-As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The plasma consists of electrons and singly charged oxygen ions, both with a density of 1e11 and a temperature of 1000K. The current-voltage charactersitic according to OML theory is easily computed and plotted::
+As an example, consider a spherical Langmuir probe of radius :math:`r=1\,\mathrm{mm}` immersed in a plasma with an electron density of :math:`n=10^{11}\,\mathrm{m^{-3}}` and an electron temperature of :math:`T=1000\,\mathrm{K}`. The electron current collected by this probe when it has a voltage of :math:`V=4.5\,\mathrm{V}` with respect to the background plasma is computed according to *Orbital Motion-Limited* (OML) theory as follows::
 
-    >>> from langmuir import *
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
+    OML_current(Sphere(r=1e-3), Electron(n=1e11, T=1000), V=4.5)
 
-    >>> plasma = []
-    >>> plasma.append(Species('electron' , n=1e11, T=1000))
-    >>> plasma.append(Species(amu=16, Z=1, n=1e11, T=1000))
+Here, ``Electron`` is a subclass of ``Species``, where the charge and mass defaults to the values of an electron.
 
-    >>> Vs = np.linspace(-2, 2, 100)
-    >>> Is = OML_current(Cylinder(r=0.255e-3, l=25e-3), plasma, Vs)
+Let's consider a more complete example. Below we compare the current-voltage characteristics predicted by the OML theory and the *finite-length* (FL) model for a cylindrical probe with an ideal guard on one end.
 
-    >>> fig = plt.figure()
-    >>> ax = fig.add_subplot(111)
+.. literalinclude:: ../../demo/basic.py
+.. image:: basic.png
 
-    >>> ax.plot(Vs, -Is*1e6)
-    >>> ax.set_xlabel(r'$V_{\mathrm{p}} [\mathrm{V}]$')
-    >>> ax.set_ylabel(r'$I_{\mathrm{p}} [\mathrm{\mu A}]$')
-    >>> ax.grid(True)
-    >>> plt.show()
-
-.. image:: IV_characteristics.png
-
-Notice that the characteristic includes all regions (ion saturation, electron retardation and electron saturation), and do not rely on approximations to the OML theory requiring the voltage to be within a certain range. What's more, it's easy to take into account for instance finite-radius effects, by replacing ``OML_current()`` with ``finite_radius_current()``.
+Contrary to the OML theory, the FL model takes into account the enhanced current collection near the edges of cylindrical probes due to particles collected from beyond the probe end.

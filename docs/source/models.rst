@@ -1,54 +1,20 @@
-Models for collected current
-============================
-Langmuir comes with several models for the collected current. Each model is represented by a function which takes a ``geometry`` and a ``species`` argument. The ``geometry`` is one of the above probe geometries, and the ``species`` parameters is either a single ``Species`` object or a list of such if it is desirable to take into account the effect of all species in a plasma. Most models also depend on the potential of the probe with respect to the background plasma. The potential can either be specified in volts using th ``V`` argument, or in terms of normalized voltage e*V/(k*T) using the ``eta`` argument. If these are Numpy arrays, the output will be a Numpy array of collected currents. The ``normalization`` argument can be set to ``'th'``, ``'thmax'``, ``'oml'`` to return currents normalized by the thermal current, Maxwellian thermal current, or OML current, respectively, rather than Ampére. Below is a description of all models:
+Models for the collected current
+================================
 
-- ``OML_current(geometry, species, V=None, eta=None, normalization=None)``
-  Current collected by a probe according to the Orbital Motion Limited (OML)
-  theory. The model assumes a probe of infinitely small radius compared to
-  the Debye length, and for a cylindrical probe, that it is infinitely long.
-  Probes with radii up to 0.2 Debye lengths (for spherical probes) or 1.0
-  Debye lengths (for cylindrical probes) are very well approximated by this
-  theory, although the literature is diverse as to how long cylindrical probes
-  must be for this theory to be a good approximation.
+Langmuir comes with several models for the characteristic :math:`I(V)` of Langmuir probes. Each model is represented by a function which, in addition to the voltage, take a ``geometry`` and a ``species`` argument. ``geometry`` is one of the previously mentioned probe geometries (``Plane``, ``Cylinder`` or ``Sphere``), and the ``species`` argument is either a single ``Species`` object or a list of such can be used to account for multiple species. As in OML theory, it is assumed that the individual species' contribution to the current can be linearly superposed. In other words, Langmuir do not at the time account for a possible non-linear coupling between the species that may occur in the sheath or in a wake.
 
-- ``finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalization=None)``
-  A current model taking into account the effects of finite radius by
-  interpolating between tabulated normalized currents. The model only
-  accounts for the attracted-species currents (for which eta<0). It does
-  not extrapolate, but returns ``nan`` when the input parameters are outside
-  the domain of the model. This happens when the normalized potential for any
-  given species is less than -25, when kappa is less than 4, when alpha is
-  more than 0.2 or when the radius is more than 10 or sometimes all the way
-  up towards 100 (as the distribution approaches Maxwellian). Normally finite
-  radius effects are negligible for radii less than 0.2 Debye lengths (spheres)
-  or 1.0 Debye lengths (cylinders).
+The voltage :math:`V` may either be specified directly through the argument ``V``, or the argument ``eta`` may be used instead. ``eta`` represents the  normalized voltage :math:`\eta=-qV/kT`, where :math:`q` and :math:`T` are the charge and temperature of the species, respectively, and :math:`k` is Boltzmann's constant. If ``V`` or ``eta`` is a Numpy array, the resulting current will also be a Numpy array. The ``normalization`` argument can be set to return normalized currents :math:`I/I_0` rather than currents in Ampére. The following normalization currents :math:`I_0` can be specified:
 
-- ``finite_length_current(geometry, species, V=None, eta=None, normalization=None)``
-  The Marholm-Marchand model for finite-length probes. Works for normalized
-  voltages up to 100.
+- ``'oml'``: The current according to OML theory. This is useful for comparing other models with OML theory.
+- ``'th'``: The current collected due to the thermal motion of particles by a neutral probe, i.e., what OML theory predicts for :math:`\eta=0`. This is used for instance by Laframboise.
+- ``'thmax'``: Same as ``th``, but this normalization current is for a Maxwellian plasma regardless of what the actual distribution specified in ``Species`` is.
 
-- ``finite_length_current_density(geometry, species, V=None, eta=None, z=None, zeta=None, normalization=None)``
-  The current per unit length according to the Marholm-Marchand model for
-  finite-length probes. Works for normalized voltages up to 100. ``z`` is
-  position on the probe, and ``zeta`` is position normalized by the Debye
-  length.
+In the case that ``species`` represents multiple species, it is unknown which species to normalize with respect to. Consequentially, the arguments ``V`` and ``normalization`` cannot be used in this case (it is of course possible to divide the result by :math:`I_0` for a chosen species manually).
 
-- ``thermal_current(geometry, species, normalization=None)``
-  Returns the thermal current for the given species and geometry. The
-  thermal current is the current the species contributes to a probe at zero
-  potential with respect to the background plasma due to random thermal
-  movements of particles.
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
 
-- ``normalization_current(geometry, species)``
-  Returns the normalization current for the given species and geometry.
-  The normalization current is the current the species would have contributed
-  to a probe at zero potential with respect to the background plasma due to
-  random thermal movements of particles, if the species had been Maxwellian.
-
-As an example, the following snippet computes the normalized electron current of a probe of 3 Debye lengths radius and normalized voltage of -10::
-
-    >>> sp  = Species(n=1e11, T=1000)
-    >>> geo = Cylinder(r=3*sp.debye, l=1)
-    >>> I = finite_radius_current(geo, sp, eta=-10, normalization='th')
-
-Notice that setting ``l==1`` means you get the current per unit length.
+   analytical
+   finite_radius
+   finite_length

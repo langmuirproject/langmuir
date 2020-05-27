@@ -42,11 +42,14 @@ As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The p
     >>> import matplotlib.pyplot as plt
 
     >>> plasma = []
-    >>> plasma.append(Species('electron' , n=1e11, T=1000))
-    >>> plasma.append(Species(amu=16, Z=1, n=1e11, T=1000))
+    >>> plasma.append(Electron(n=1e11, T=1000))
+    >>> plasma.append(Proton(  n=1e11, T=1000))
 
-    >>> Vs = np.linspace(-2, 2, 100)
-    >>> Is = OML_current(Cylinder(r=0.255e-3, l=25e-3), plasma, Vs)
+    >>> Vs = np.linspace(-2, 8, 100)
+    >>> Is = OML_current(Cylinder(r=1e-3, l=25e-3), plasma, Vs)
+
+    >>> plt.plot(Vs, Is)
+    >>> plt.show()
 
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(111)
