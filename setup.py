@@ -37,6 +37,8 @@ setup(name='langmuir',
       author_email='marholm@marebakken.com',
       url='https://github.com/sigvaldm/langmuir.git',
       packages=['langmuir'],
+      package_data={'': ['params_structured.npz',
+                         'params.npz']},
       install_requires=['numpy', 'scipy'],
       license='LGPL',
       classifiers=[
