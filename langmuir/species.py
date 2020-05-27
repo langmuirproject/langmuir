@@ -20,6 +20,7 @@ along with langmuir.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from scipy.constants import value as constants
+from scipy.constants import epsilon_0
 from langmuir.misc import *
 import numpy as np
 
@@ -71,7 +72,7 @@ class Species(object):
 
         e    = constants('elementary charge')
         k    = constants('Boltzmann constant')
-        eps0 = constants('electric constant')
+        eps0 = epsilon_0 #constants('vacuum electric permittivity')
         amu  = constants('atomic mass constant')
 
         if 'Z' in kwargs:
