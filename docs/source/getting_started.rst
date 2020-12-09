@@ -27,3 +27,7 @@ As an example, consider a 25mm long cylindrical probe with radius 0.255mm. The p
 .. image:: IV_characteristics.png
 
 Notice that the characteristic includes all regions (ion saturation, electron retardation and electron saturation), and do not rely on approximations to the OML theory requiring the voltage to be within a certain range. What's more, it's easy to take into account for instance finite-radius effects, by replacing ``OML_current()`` with ``finite_radius_current()``.
+
+Another example is processing 4-Needle Langmuir Probe (4-NLP) measurements using the Jacobsen-Bekkeng method to get density. If the probe biases are 2, 3, 4, and 5V, and the N measurements samples is contained in an Nx4 array ``I``, the densities can be found as follows::
+
+    >>> n = jacobsen_density(Cylinder(r=0.255e-3, l=25e-3), [2,3,4,5], I)
