@@ -264,3 +264,60 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     return I if eta_isarray else I[0]
+
+def jacobsen_density(geometry, biases, currents, species=Electron(), pbar=None):
+    """
+    Density computed according to the slope in current squared versus voltage
+    (the Jacobsen-Bekkeng method). This assumes that OML theory for a
+    cylindrical probe is exact.
+
+    Parameters
+    ----------
+    geometry: Cylinder
+        Probe geometry
+
+    biases: array-like of floats
+        Probe bias voltages [V] with respect to some common reference
+
+    currents: 2D array-like of floats
+        Current measurements. currents[i,j] is sample i, probe current j
+
+    species: Species
+        The attracted species. The density and temperature in the species
+        object is disregarded by this function.
+
+    pbar: function
+        Progress bar wrapper function that takes an iterable and yields/returns
+        an iterable. To use tqdm, set pbar=tqdm.tqdm, or alternatively,
+
+            pbar=lambda x: tqdm(x, desc='Description')
+
+    Returns
+    -------
+    Array of computed densities, one element for each row in currents.
+    """
+
+    currents = make_array(currents)
+
+    if not isinstance(geometry, Cylinder):
+        raise ValueError('Geometry not supported: {}'.format(geometry))
+
+    if len(biases) != currents.shape[1]:
+        raise ValueError('The number of columns in currents must equal the'\
+                         'number of elements in biases')
+
+    m = species.m
+    q = species.q
+    k = constants('Boltzmann constant')
+    C = 2/np.sqrt(np.pi)
+    S = 2*np.pi*geometry.r*geometry.l # surface area
+    slope_factor = -2*np.pi*m/((C*S)**2*q**3)
+
+    if pbar is None: pbar = lambda x: x
+
+    density = np.ones(len(currents))
+    for i in pbar(range(len(currents))):
+        slope, offset = np.polyfit(biases, currents[i]**2, 1)
+        density[i] = np.sqrt(slope_factor*slope)
+
+    return density
