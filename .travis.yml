@@ -3,7 +3,9 @@ python:
 - 2.7
 - 3.5
 - 3.6
-- 3.7-dev
+- 3.7
+- 3.8
+- 3.9-dev
 before_install:
 - pip install "pytest>=3.6"
 - pip install pytest-cov
@@ -17,6 +19,6 @@ deploy:
   user: __token__
   on:
     tags: true
-    python: 3.7-dev
+    python: 3.9-dev
   password:
     secure: D7qrntIbUAwR9IrB5iZ1fwQTope07G7dLhqPLLkQVdjXSNLczTChjPW7LDfLIcRrAVqF7FryAHUARU1omvqK4pBWVtwNDRZjnvLzoNmx580X2EOTal+8hssKlPUIef8slEGIg5pGeIbeVBttMXywgszyhf43pjNx6WeUCuvldla4sOUExL2f1z4Q4RLe/K8s8A0puKe2IKaq9BFnvtugchHdYpKMb7/I7yirvEUQ0xXZbZW/1gv7aJCu6mbojv9IHWEVYEe1PnhojMnW7ativpFHX6SZCJ3GL7JQMMonkrApFUzSP8d8CyJd2dng1Tn1fiQZ+o+aasZmieX63OyfCRXg8IxPiJJkRg9KWJ9JKQ6x7JPRy/VdOOGRDE5UQWlEmlMhAy8fSMvT/mjI5V2splhMQX/Zh1/HqX/pPaB4ExczQWJIOy/cxCYd37B5nv0S2AMpuurVrtVE+8LSi6F3j97HtexWPH2uHmArkbT/EDKYWnLl5/DhBZ7Hk0dH1YDPjefZdvArFqV2i2ksqceEdNC9ZALrl+njDmduYYFNNyDmhtm3bvB3Y8xbuDjHqMhl7DQSP/ss4LvJPMuk7pdNq0SiotGTnqFFJ4KKq/3GBPnb6HOD/0IDyGqVLQ/znbo/wn8pTBBAaVaFEpsIILk4wjdFb9+fucQ3fVsrwxq9YAk=
