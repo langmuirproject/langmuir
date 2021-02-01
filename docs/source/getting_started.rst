@@ -8,9 +8,13 @@ As an example, consider a spherical Langmuir probe of radius :math:`r=1\,\mathrm
 
 Here, ``Electron`` is a subclass of ``Species``, where the charge and mass defaults to the values of an electron.
 
-Let's consider a more complete example. Below we compare the current-voltage characteristics predicted by the OML theory and the *finite-length* (FL) model for a cylindrical probe with an ideal guard on one end.
+Let's consider a more complete example. Below we compare the current-voltage characteristics predicted by the OML theory and the *finite-length* (FL) theory for a cylindrical probe with an ideal guard on one end.
 
 .. literalinclude:: ../../demo/basic.py
 .. image:: basic.png
 
 Contrary to the OML theory, the FL model takes into account the enhanced current collection near the edges of cylindrical probes due to particles collected from beyond the probe end.
+
+Another example is processing 4-Needle Langmuir Probe (4-NLP) measurements using the Jacobsen-Bekkeng method to get density. If the probe biases are 2, 3, 4, and 5V, and the N measurements samples is contained in an Nx4 array ``I``, the densities can be found as follows::
+
+    n = jacobsen_density(Cylinder(r=0.255e-3, l=25e-3), [2,3,4,5], I)

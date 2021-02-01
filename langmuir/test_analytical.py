@@ -185,3 +185,20 @@ def test_OML_current_kappa_cairns():
     # Repelled particles - Kappa VDF
     I = OML_current(geo, sp_k, eta=-5)
     assert(I == approx(-2.26604e-11))
+
+def test_jacobsen_density_identity():
+    # Tests that the Jacobsen methods agrees perfectly with OML
+    n = [1e11, 5e11, 1e12]
+    geo = Cylinder(r=1e-3, l=25e-3)
+    V = np.array([2,3,4])
+    I = [OML_current(geo, Electron(n=a, T=1000), V=V+1) for a in n]
+    n_hat = jacobsen_density(geo, V, I)
+    assert np.allclose(n, n_hat, rtol=1e-4)
+
+def test_jacobsen_density_geometry():
+    with pytest.raises(ValueError):
+        jacobsen_density(Sphere(r=1e-3), [1,2,3], [[1e-3,1e-4,1e-5]])
+
+def test_jacobsen_density_shape_mismatch():
+    with pytest.raises(ValueError):
+        jacobsen_density(Cylinder(r=1e-3, l=25e-3), [1,2], [[1e-3,1e-4,1e-5]])

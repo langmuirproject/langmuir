@@ -35,8 +35,10 @@ setup(name='langmuir',
       long_description=long_description,
       author='Sigvald Marholm',
       author_email='marholm@marebakken.com',
-      url='https://github.com/sigvaldm/langmuir.git',
+      url='https://github.com/langmuirproject/langmuir.git',
       packages=['langmuir'],
+      package_data={'': ['params_structured.npz',
+                         'params.npz']},
       install_requires=['numpy', 'scipy'],
       license='LGPL',
       classifiers=[
@@ -44,6 +46,8 @@ setup(name='langmuir',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.8'
+        'Programming Language :: Python :: 3.9'
         ]
      )
 
