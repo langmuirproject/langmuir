@@ -4,17 +4,12 @@ The Langmuir library contains a collection of functions that compute the current
 
 As an example, consider a spherical Langmuir probe of radius :math:`r=1\,\mathrm{mm}` immersed in a plasma with an electron density of :math:`n=10^{11}\,\mathrm{m^{-3}}` and an electron temperature of :math:`T=1000\,\mathrm{K}`. The electron current collected by this probe when it has a voltage of :math:`V=4.5\,\mathrm{V}` with respect to the background plasma is computed according to *Orbital Motion-Limited* (OML) theory as follows::
 
-    OML_current(Sphere(r=1e-3), Electron(n=1e11, T=1000), V=4.5)
+    >>> OML_current(Sphere(r=1e-3), Electron(n=1e11, T=1000), V=4.5)
+    -5.262656728335636e-07
 
-Here, ``Electron`` is a subclass of ``Species``, where the charge and mass defaults to the values of an electron.
-
-Let's consider a more complete example. Below we compare the current-voltage characteristics predicted by the OML theory and the *finite-length* (FL) theory for a cylindrical probe with an ideal guard on one end.
+Let's consider a more complete example. Below we compare the current-voltage characteristics predicted by the OML theory and the *finite-length* (FL) model for a cylindrical probe with an ideal guard on one end.
 
 .. literalinclude:: ../../demo/basic.py
 .. image:: basic.png
 
-Contrary to the OML theory, the FL model takes into account the enhanced current collection near the edges of cylindrical probes due to particles collected from beyond the probe end.
-
-Another example is processing 4-Needle Langmuir Probe (4-NLP) measurements using the Jacobsen-Bekkeng method to get density. If the probe biases are 2, 3, 4, and 5V, and the N measurements samples is contained in an Nx4 array ``I``, the densities can be found as follows::
-
-    n = jacobsen_density(Cylinder(r=0.255e-3, l=25e-3), [2,3,4,5], I)
+This example demonstrates that accounting for edge effects on a probe of finite length leads to a larger collected current. Also note that the characteristic correctly captures both the electron saturation, the electron retardation, and the ion saturation regions.

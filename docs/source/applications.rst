@@ -5,16 +5,10 @@ Examples
    :maxdepth: 2
    :caption: Contents:
 
-   normalization
    beta
    floating_potential
    inverse
 
+Another example is processing 4-Needle Langmuir Probe (4-NLP) measurements using the Jacobsen-Bekkeng method to get density. If the probe biases are 2, 3, 4, and 5V, and the N measurements samples is contained in an Nx4 array ``I``, the densities can be found as follows::
 
-As an example, the following snippet computes the normalized electron current of a probe of 3 Debye lengths radius and normalized voltage of -10::
-
-    >>> sp  = Species(n=1e11, T=1000)
-    >>> geo = Cylinder(r=3*sp.debye, l=1)
-    >>> I = finite_radius_current(geo, sp, eta=-10, normalization='th')
-
-Notice that setting ``l==1`` means you get the current per unit length.
+    n = jacobsen_density(Cylinder(r=0.255e-3, l=25e-3), [2,3,4,5], I)

@@ -10,10 +10,11 @@ Langmuir's documentation!
    species
    geometry
    models
-   plasma_parameters
    applications
    performance
    citation
+   bibliography
+.. contributing
 .. analytical_theories
 .. finite_radius
 .. finite_length

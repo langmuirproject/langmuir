@@ -2,9 +2,10 @@ from langmuir import *
 import numpy as np
 import matplotlib.pyplot as plt
 
-plasma = []
-plasma.append(Electron(n=1e11, T=1000))
-plasma.append(Proton(n=1e11, T=1000))
+plasma = [
+    Electron(n=1e11, T=1000),
+    Hydrogen(n=1e11, T=1000)
+    ]
 
 geometry = Cylinder(r=1e-3, l=60e-3, lguard=True)
 
