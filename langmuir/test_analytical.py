@@ -25,7 +25,7 @@ from pytest import approx
 import pytest
 
 def test_thermal_current_maxwellian_normalized():
-    sp = Species(n=1e11, T=1000)
+    sp = Electron(n=1e11, T=1000)
 
     geo = Cylinder(3*sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
@@ -36,8 +36,8 @@ def test_thermal_current_maxwellian_normalized():
     assert(I == approx(1))
 
 def test_thermal_current_cairns_normalized():
-    sp = Species(n=1e11, T=1000, alpha=0.2)
-    sp_m = Species(n=1e11, T=1000, alpha=0.0)
+    sp = Electron(n=1e11, T=1000, alpha=0.2)
+    sp_m = Electron(n=1e11, T=1000, alpha=0.0)
 
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
@@ -52,7 +52,7 @@ def test_thermal_current_cairns_normalized():
     assert(I_m == approx(1))
 
 def test_thermal_current_kappa_normalized():
-    sp = Species(n=1e11, T=1000, kappa=4)
+    sp = Electron(n=1e11, T=1000, kappa=4)
 
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
@@ -63,8 +63,8 @@ def test_thermal_current_kappa_normalized():
     assert(I == approx(0.95153286194814457))
 
 def test_thermal_current_kappa_cairns_normalized():
-    sp = Species(n=1e11, T=1000, alpha=0.2, kappa=4)
-    sp_k = Species(n=1e11, T=1000, alpha=0, kappa=4)
+    sp = Electron(n=1e11, T=1000, alpha=0.2, kappa=4)
+    sp_k = Electron(n=1e11, T=1000, alpha=0, kappa=4)
 
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
@@ -79,7 +79,7 @@ def test_thermal_current_kappa_cairns_normalized():
     assert(I_k == approx(0.95153286194814457))
 
 def test_thermal_OML_current_maxwellian_normalized():
-    sp = Species(n=1e11, T=1000)
+    sp = Electron(n=1e11, T=1000)
 
     geo = Cylinder(3*sp.debye, 1)
     I = OML_current(geo, sp, eta=0, normalization='thmax')
@@ -90,13 +90,13 @@ def test_thermal_OML_current_maxwellian_normalized():
     assert(I == approx(1))
 
 def test_OML_current_maxwellian():
-    I = OML_current(Cylinder(1e-3, 25e-3), Species(n=1e11, T=1000), 5)
+    I = OML_current(Cylinder(1e-3, 25e-3), Electron(n=1e11, T=1000), 5)
     assert(I == approx(-1.0714855994312037e-06))
 
 def test_normalization_current():
     sph = Sphere(1e-3)
     cyl = Cylinder(1e-3,10e-3)
-    sp  = Species(n=1e11, T=1000)
+    sp  = Electron(n=1e11, T=1000)
     assert(normalization_current(sph, sp) == approx(-9.888431090271652e-09))
     assert(normalization_current(cyl, sp) == approx(-4.944215545135826e-08))
 
@@ -114,13 +114,13 @@ def test_normalization_current_multiple_species():
 
 def test_OML_current_not_normalized():
     geometry = Cylinder(0.255e-3, 25e-3)
-    species  = Species(n=10e10, eV=0.26)
+    species  = Electron(n=10e10, eV=0.26)
     I1 = OML_current(geometry, species, 5)
     assert(I1 == approx(-2.777872191401695e-07))
 
 def test_OML_current_cairns():
-    sp = Species(n=1e11, T=1000, alpha=0.2)
-    sp_m = Species(n=1e11, T=1000, alpha=0.0)
+    sp = Electron(n=1e11, T=1000, alpha=0.2)
+    sp_m = Electron(n=1e11, T=1000, alpha=0.0)
 
     # Cylindrical geometry
     geo = Cylinder(0.255e-3, 25e-3)
@@ -153,8 +153,8 @@ def test_OML_current_cairns():
     assert(I == approx(-4.33247e-12))
 
 def test_OML_current_kappa_cairns():
-    sp = Species(n=1e11, T=1000, kappa=4.0, alpha=0.2)
-    sp_k = Species(n=1e11, T=1000, kappa=4.0, alpha=0.0)
+    sp = Electron(n=1e11, T=1000, kappa=4.0, alpha=0.2)
+    sp_k = Electron(n=1e11, T=1000, kappa=4.0, alpha=0.0)
 
     # Cylindrical geometry
     geo = Cylinder(0.255e-3, 25e-3)
