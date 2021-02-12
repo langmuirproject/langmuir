@@ -265,7 +265,7 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
 
     return I if eta_isarray else I[0]
 
-def jacobsen_density(geometry, biases, currents, species=Electron(), pbar=None):
+def jacobsen_density(geometry, biases, currents, species=Electron()):
     """
     Density computed according to the slope in current squared versus voltage
     (the Jacobsen-Bekkeng method). This assumes that OML theory for a
@@ -286,18 +286,13 @@ def jacobsen_density(geometry, biases, currents, species=Electron(), pbar=None):
         The attracted species. The density and temperature in the species
         object is disregarded by this function.
 
-    pbar: function
-        Progress bar wrapper function that takes an iterable and yields/returns
-        an iterable. To use tqdm, set pbar=tqdm.tqdm, or alternatively,
-
-            pbar=lambda x: tqdm(x, desc='Description')
-
     Returns
     -------
     Array of computed densities, one element for each row in currents.
     """
 
     currents = make_array(currents)
+    biases = make_array(biases)
 
     if not isinstance(geometry, Cylinder):
         raise ValueError('Geometry not supported: {}'.format(geometry))
@@ -313,11 +308,13 @@ def jacobsen_density(geometry, biases, currents, species=Electron(), pbar=None):
     S = 2*np.pi*geometry.r*geometry.l # surface area
     slope_factor = -2*np.pi*m/((C*S)**2*q**3)
 
-    if pbar is None: pbar = lambda x: x
-
-    density = np.ones(len(currents))
-    for i in pbar(range(len(currents))):
-        slope, offset = np.polyfit(biases, currents[i]**2, 1)
-        density[i] = np.sqrt(slope_factor*slope)
+    m = len(biases)
+    sv = np.sum(biases)
+    svv = np.sum(biases**2)
+    curr_sq = currents**2
+    si = np.sum(curr_sq, axis=1)
+    svi = np.sum(biases*curr_sq, axis=1)
+    slope = (m*svi-sv*si)/(m*svv-sv**2)
+    density = np.sqrt(slope_factor*slope)
 
     return density
