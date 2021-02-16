@@ -1,15 +1,13 @@
 Finite radius models
-====================
-- ``finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalization=None)``
-  A current model taking into account the effects of finite radius by
-  interpolating between tabulated normalized currents. The model only
-  accounts for the attracted-species currents (for which eta<0). It does
-  not extrapolate, but returns ``nan`` when the input parameters are outside
-  the domain of the model. This happens when the normalized potential for any
-  given species is less than -25, when kappa is less than 4, when alpha is
-  more than 0.2 or when the radius is more than 10 or sometimes all the way
-  up towards 100 (as the distribution approaches Maxwellian). Normally finite
-  radius effects are negligible for radii less than 0.2 Debye lengths (spheres)
-  or 1.0 Debye lengths (cylinders).
+--------------------
 
+Finite radius models relax the restriction on the OML theory that the radius should be small, and may be accessed through the following function::
 
+    finite_radius_current(geometry, species, V=None, eta=None, table='laframboise-darian-marholm', normalization=None)
+
+Example of use:
+
+.. literalinclude:: ../../demo/finite_radius.py
+.. image:: finite_radius.png
+
+The model is built from two sets of tabulated numerical results, which can be found in [Laframboise]_ and [Darian]_. The former is more accurate but covers only Maxwellian plasmas, whereas the latter covers the more general Kappa-Cairns distributions. By default interpolation between tabulated values will use the most accurate values. The model is valid for :math:`0\leq\eta\leq 25`, :math:`\kappa\leq 4` and :math:`\alpha>0.2`. Probe radii extends up to 10 Debye lengths, or even 100 Debye lengths as the distribution approaches Maxwellian.

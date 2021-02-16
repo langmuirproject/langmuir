@@ -5,9 +5,11 @@ Examples
    :maxdepth: 2
    :caption: Contents:
 
-   beta
    floating_potential
-   inverse
+   beta
+
+.. inverse
+.. rbf
 
 Another example is processing 4-Needle Langmuir Probe (4-NLP) measurements using the Jacobsen-Bekkeng method to get density. If the probe biases are 2, 3, 4, and 5V, and the N measurements samples is contained in an Nx4 array ``I``, the densities can be found as follows::
 

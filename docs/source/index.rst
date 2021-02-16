@@ -10,7 +10,7 @@ Langmuir's documentation!
    species
    geometry
    models
-   applications
+   examples
    performance
    citation
    bibliography
@@ -22,7 +22,7 @@ Langmuir's documentation!
 
 .. TODO:
     - Finite-length:
-        - Include some theory on profile functions and interpolation     
+        v Include some theory on profile functions and interpolation     
         - Example of current profile, and how to use current profile demo
         - New demo on IV-characteristics with guard and FL-theory
     - Finite-radius:

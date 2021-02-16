@@ -8,3 +8,5 @@ Bibliography
 .. [Laframboise] Whatever
 
 .. [MottSmith] Whatever
+
+.. [Whipple] Whatever

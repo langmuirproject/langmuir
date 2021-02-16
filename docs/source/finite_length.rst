@@ -25,7 +25,7 @@ Total collected current
 ~~~~~~~~~~~~~~~~~~~~~~~
 The second model describes the total collected current, and is merely the integral of the current per unit length. Its signature is as follows::
 
-    finite_length_current(geometry, species, V=None, eta=None, normalization=None)
+    finite_length_current(geometry, species, V=None, eta=None, normalization=None, interpolate='I')
 
 See example of use in :doc:`getting_started`.
 
