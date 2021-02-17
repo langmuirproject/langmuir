@@ -1,7 +1,9 @@
 Bibliography
 ------------
 
-.. [Marholm] Whatever
+.. [Marholm] Finite-length
+
+.. [Marholm2] Thesis
 
 .. [Darian] Whatever
 
@@ -10,3 +12,7 @@ Bibliography
 .. [MottSmith] Whatever
 
 .. [Whipple] Whatever
+
+.. [Bekkeng] Whatever
+
+.. [Bittencourt] Whatever
