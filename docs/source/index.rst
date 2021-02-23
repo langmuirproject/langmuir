@@ -10,14 +10,21 @@ Langmuir's documentation!
    species
    geometry
    models
-   plasma_parameters
-   inverse
-.. performance
-.. citation
-.. analytical_theories
-.. finite_radius
-.. finite_length
-.. reference
+   examples
+   citation
+   bibliography
+.. contributing
+
+.. TODO:
+    - Finite-length:
+        v Include some theory on profile functions and interpolation     
+        v Example of current profile, and how to use current profile demo
+        - New demo on IV-characteristics with guard and FL-theory
+    - Finite-radius:
+        - Proper explanation of different tables
+    v Tutorial on IV-characteristics and how to compute beta
+    v Tutorial on inverse problems
+    v Finding the floating potential
 
 Indices and tables
 ==================

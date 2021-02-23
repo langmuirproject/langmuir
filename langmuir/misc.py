@@ -33,4 +33,3 @@ def make_array(arr):
     if isinstance(arr, (int, float, np.int64, np.int32, np.float64, np.float32)):
         arr = [arr]
     return np.array(arr, dtype=np.float)
-

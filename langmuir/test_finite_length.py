@@ -149,7 +149,7 @@ def test_current_samples():
     # Testing that a few random sample points don't change. All points are in
     # the original data, so the test should be independent of interpolation
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
     ls = np.array([5, 30, 80, 400, 2000], dtype=np.float)*1e-3
@@ -170,7 +170,7 @@ def test_current_density_samples():
     # Testing that a few random sample points don't change. All points are in
     # the original data, so the test should be independent of interpolation
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
     ls = np.array([5, 30, 80, 400, 2000], dtype=np.float)*1e-3
@@ -192,7 +192,7 @@ def test_current_interpolated_samples():
     # Testing that a few random sample points don't change. These points depen
     # upon the interpolation scheme. 
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
     ls = np.array([7, 70, 700], dtype=np.float)*1e-3
@@ -228,7 +228,7 @@ def test_current_density_interpolated_samples():
     # Testing that a few random sample points don't change. These points depen
     # upon the interpolation scheme. 
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
     ls = np.array([7, 70, 700], dtype=np.float)*1e-3
@@ -252,34 +252,34 @@ def test_current_density_interpolated_samples():
 
 def test_current_non_maxwellian(caplog):
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
     geo = Cylinder(0.1*elec.debye, 10*elec.debye)
-    I = finite_length_current(geo, Species(n=35e10, T=1000, alpha=0.3), 3.0)
-    I = finite_length_current(geo, Species(n=35e10, T=1000, kappa=5), 3.0)
+    I = finite_length_current(geo, Electron(n=35e10, T=1000, alpha=0.3), 3.0)
+    I = finite_length_current(geo, Electron(n=35e10, T=1000, kappa=5), 3.0)
 
     assert(len(caplog.records) == 2)
 
 def test_current_invalid_interpolate(caplog):
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
     geo = Cylinder(0.1*elec.debye, 10*elec.debye)
 
     with pytest.raises(ValueError):
-        finite_length_current(geo, Species(n=35e10, T=1000), 3.0, interpolate='a')
+        finite_length_current(geo, Electron(n=35e10, T=1000), 3.0, interpolate='a')
 
 def test_current_too_high_eta(caplog):
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
     geo = Cylinder(0.1*elec.debye, 10*elec.debye)
     I = finite_length_current(geo, elec, eta=111)
     assert(len(caplog.records) == 1)
 
 def test_current_density_non_maxwellian(caplog):
 
-    elec = Species(n=35e10, eV=0.08)
+    elec = Electron(n=35e10, eV=0.08)
     geo = Cylinder(0.1*elec.debye, 10*elec.debye)
-    I = finite_length_current_density(geo, Species(n=35e10, T=1000, alpha=0.3), 3.0)
-    I = finite_length_current_density(geo, Species(n=35e10, T=1000, kappa=5), 3.0)
+    I = finite_length_current_density(geo, Electron(n=35e10, T=1000, alpha=0.3), 3.0)
+    I = finite_length_current_density(geo, Electron(n=35e10, T=1000, kappa=5), 3.0)
 
     assert(len(caplog.records) == 2)
 
