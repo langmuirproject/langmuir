@@ -171,11 +171,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
 
-    if len(indices_n)>0:
-        pos_neg = "positive" if q>0 else "negative"
-        logger.warning("Only attracted species current is covered by tabulated "
-                       "values. Currents due to {} is set to zero for "
-                       "{} potentials".format(species, pos_neg))
+    I[indices_n] = I0*OML_current(geometry, species, eta=eta[indices_n], normalization='thmax')
 
     if any(np.isnan(I)):
         logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")

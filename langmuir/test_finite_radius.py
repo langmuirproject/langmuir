@@ -165,15 +165,11 @@ def test_discard_spectral_indices(caplog):
 def test_discard_repelled_particles(caplog):
 
     electron = Electron()
-    I = finite_radius_current(Sphere(electron.debye), electron, eta=[1,-1])
-    assert(len(caplog.records) == 1)
-    assert('negative' in caplog.text)
-    assert('positive' not in caplog.text)
-
-    ion = Proton()
-    I = finite_radius_current(Sphere(ion.debye), ion, eta=[1,-1])
-    assert(len(caplog.records) == 2)
-    assert('positive' in caplog.text)
+    geo = Sphere(electron.debye)
+    eta = [-2,-1.2,-1]
+    I = finite_radius_current(geo, electron, eta=eta)
+    I_OML = OML_current(geo, electron, eta=eta)
+    assert np.allclose(I, I_OML)
 
 def test_domain(caplog, electron):
 
