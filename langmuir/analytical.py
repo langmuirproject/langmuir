@@ -104,21 +104,15 @@ def thermal_current(geometry, species, normalization=None):
     else:
         raise ValueError('Normalization not supported: {}'.format(normalization))
 
-    if isinstance(geometry, Sphere):
+    # Beware that the thermal current uses the same coefficients C and D
+    # both for spherical and cylindrical probes (c.f. Darian et al.)
+    if isinstance(geometry, (Sphere, Cylinder)):
         if kappa == float('inf'):
             C = 1.0
             D = (1.+24*alpha)/(1.+15*alpha)
         else:
             C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
             D = (1.+24*alpha*((kappa-1.5)**2/((kappa-2.)*(kappa-3.))))/(1.+15*alpha*((kappa-1.5)/(kappa-2.5)))
-    elif isinstance(geometry, Cylinder):
-        if kappa == float('inf'):
-            C = 1.0
-            D = (1.+3.*alpha)/(1.+15.*alpha)
-        else:
-            C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
-            D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
-                (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
 

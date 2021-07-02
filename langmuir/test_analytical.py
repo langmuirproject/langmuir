@@ -42,7 +42,8 @@ def test_thermal_current_cairns_normalized():
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
     I_m = thermal_current(geo, sp_m, normalization='thmax')
-    assert(I == approx(0.4))
+    # assert(I == approx(0.4))
+    assert(I == approx(1.45))
     assert(I_m == approx(1))
 
     geo = Sphere(3 * sp.debye)
@@ -56,7 +57,8 @@ def test_thermal_current_kappa_normalized():
 
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
-    assert(I == approx(1.8446619684315548))
+    # assert(I == approx(1.8446619684315548))
+    assert(I == approx(0.95153286194814457))
 
     geo = Sphere(3 * sp.debye)
     I = thermal_current(geo, sp, normalization='thmax')
@@ -69,8 +71,10 @@ def test_thermal_current_kappa_cairns_normalized():
     geo = Cylinder(3 * sp.debye, 1)
     I = thermal_current(geo, sp, normalization='thmax')
     I_k = thermal_current(geo, sp_k, normalization='thmax')
-    assert(I == approx(0.43920523057894167))
-    assert(I_k == approx(1.8446619684315548))
+    assert(I == approx(2.5374209651950519))
+    assert(I_k == approx(0.95153286194814457))
+    # assert(I == approx(0.43920523057894167))
+    # assert(I_k == approx(1.8446619684315548))
 
     geo = Sphere(3 * sp.debye)
     I = thermal_current(geo, sp, normalization='thmax')
