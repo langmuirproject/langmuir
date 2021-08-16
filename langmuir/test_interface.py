@@ -184,12 +184,12 @@ def test_input_output_format(current, electron):
 
         I = current(geo, electron, [1, 2])
         assert(isinstance(I, np.ndarray))
-        assert(I.dtype==np.float)
+        assert(I.dtype==float)
         assert(I.shape==(2,))
 
         I = current(geo, electron, np.array([1, 2]))
         assert(isinstance(I, np.ndarray))
-        assert(I.dtype==np.float)
+        assert(I.dtype==float)
         assert(I.shape==(2,))
 
 @pytest.mark.parametrize("current", current_models)

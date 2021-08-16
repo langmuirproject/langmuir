@@ -30,7 +30,7 @@ def electron():
 
 @pytest.fixture
 def eta_fl():
-    return np.array([2, 10, 17, 25, 32, 50, 75, 100], dtype=np.float)
+    return np.array([2, 10, 17, 25, 32, 50, 75, 100], dtype=float)
 
 def test_current_normalize_OML(electron, eta_fl):
 
@@ -152,8 +152,8 @@ def test_current_samples():
     elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
-    ls = np.array([5, 30, 80, 400, 2000], dtype=np.float)*1e-3
-    etas = np.array([100, 2, 32, 17, 25], dtype=np.float)
+    ls = np.array([5, 30, 80, 400, 2000], dtype=float)*1e-3
+    etas = np.array([100, 2, 32, 17, 25], dtype=float)
     Ifs = np.array([-7.311843622376143e-06,
                     -1.2270514750624203e-06,
                     -1.332414356159239e-05,
@@ -173,8 +173,8 @@ def test_current_density_samples():
     elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
-    ls = np.array([5, 30, 80, 400, 2000], dtype=np.float)*1e-3
-    etas = np.array([100, 2, 32, 17, 25], dtype=np.float)
+    ls = np.array([5, 30, 80, 400, 2000], dtype=float)*1e-3
+    etas = np.array([100, 2, 32, 17, 25], dtype=float)
     zs = np.array([0, .22, .1, .75, 0.91, 1])
     Ifs = np.array([[-0.00126263, -0.00147027, -0.00137461, -0.00148828, -0.00136481, -0.00126263],
                     [-4.02337566e-05, -4.10898286e-05, -4.26822956e-05, -4.07257345e-05, -4.27430040e-05, -4.02337566e-05],
@@ -195,8 +195,8 @@ def test_current_interpolated_samples():
     elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
-    ls = np.array([7, 70, 700], dtype=np.float)*1e-3
-    etas = np.array([65, 1, 90], dtype=np.float)
+    ls = np.array([7, 70, 700], dtype=float)*1e-3
+    etas = np.array([65, 1, 90], dtype=float)
 
     # Ground truth when using scipy.interpolate.griddata
     # Ifs = np.array([-6.2794005496528275e-06,
@@ -231,8 +231,8 @@ def test_current_density_interpolated_samples():
     elec = Electron(n=35e10, eV=0.08)
 
     r = 1e-3
-    ls = np.array([7, 70, 700], dtype=np.float)*1e-3
-    etas = np.array([65, 1, 90], dtype=np.float)
+    ls = np.array([7, 70, 700], dtype=float)*1e-3
+    etas = np.array([65, 1, 90], dtype=float)
     zs = np.array([0, .4, .29, 1])
 
     # Ground truth when using scipy.interpolate.griddata
