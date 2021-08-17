@@ -33,7 +33,7 @@ plasma parameters from a set of such measurements at different voltages.
 
 Traditionally, the current--voltage characteristic $I(V)$ (current as function
 of voltage) for such instruments is derived by means of analytical theories
-such as the *orbital motion-limited* (OML) theory [@mott-smith:1926]. Such theories
+such as the *orbital motion-limited* (OML) theory [@mott-smith]. Such theories
 make several simplifying assumptions, for instance that cylindrical probes be
 infinitely long and very thin. With computer simulations it is possible to
 simulate current collection with fewer restrictions. However, simulations
@@ -45,7 +45,7 @@ some of which are merely analytical expressions for idealized cases, while
 others cover non-ideal cases based on high-fidelity simulation results. The
 latter class incorporate appropriate interpolation schemes which make them
 continuous within their domain, as well as scaling based on dimensional
-analyses (Buckingham's pi theorem [@buckingham:1914]) which make the results scale to
+analyses (Buckingham's pi theorem [@buckingham]) which make the results scale to
 a wide range of physical parameters. Evaluating a characteristic for a set of
 parameters is near-instantaneous compared to running a high-fidelity
 simulation, which can take hours for each data point. As such, these functions
@@ -65,10 +65,10 @@ analytical theories. The OML theory for cylindrical probes, for example,
 predict that for probes with large enough voltage, the slope
 $\mathrm{d}I^2/\mathrm{d}V=cn_e$ where $c$ is a known constant and $n_e$ is the
 electron density. Two or more probes can thus be used to calculate the slope
-and in turn the density [@jacobsen:2010]. The accuracy of such methods is of course
+and in turn the density [@jacobsen]. The accuracy of such methods is of course
 limited by the assumptions made in the analytical derivations.
 
-Instead, we take a more general point of view [@marholm:2020]. A set of
+Instead, we take a more general point of view [@marholm]. A set of
 measurements $\{\hat I_p\}_{p=1}^N$ taken at voltages ${V_p}_{p=1}^N$ by
 probe(s) with a characteristic $I(V; \mathbf P)$, should follow this system of
 equations:
