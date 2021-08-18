@@ -70,10 +70,10 @@ electron density. Two or more probes can thus be used to calculate the slope
 and in turn the density [@jacobsen]. The accuracy of such methods is of course
 limited by the assumptions made in the analytical derivations.
 
-Instead, we take a more general point of view, as proposed by @marholm. A set
-of measurements $\{\hat I_p\}_{p=1}^N$ taken at voltages $\{V_p\}_{p=1}^N$ by
-probe(s) with a characteristic $I(V; \mathbf P)$, should follow this system of
-equations:
+Instead, we take a more general point of view, as suggested by e.g. @marholm. A
+set of measurements $\{\hat I_p\}_{p=1}^N$ taken at voltages $\{V_p\}_{p=1}^N$
+by probe(s) with a characteristic $I(V; \mathbf P)$, should follow this system
+of equations:
 $$
     \hat I_p = I(V_p; \mathbf P),\quad p=1,...,N
 $$
@@ -82,11 +82,11 @@ is referred to as the *inverse problem*. The inverse problem can in principle
 be solved by any suitable computational method, which is already available in
 other software packages, but programmatic access to the characteristic is a
 prerequisite. This is where Langmuir comes in, as an enabling technology. In
-addition, the tutorial-like documentation is an important part of the
-contribution, as it serves to demonstrate how Langmuir may be used together
+addition, the tutorial-like documentation of Langmuir is an important part of
+the contribution, as it serves to demonstrate how Langmuir may be used together
 with third party software to solve the inverse problem.
 
-Langmuir has already been used to solve real-world problems [@marholm,
+Langmuir has already been used to solve real-world problems [@marholm;
 @guthrie], and continue to be used in ongoing research.
 
 # Acknowledgements
