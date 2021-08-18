@@ -42,12 +42,12 @@ to apply for other researchers.
 
 Langmuir is a library of Python functions that act as characteristics $I(V)$,
 some of which are merely analytical expressions for idealized cases, while
-others cover non-ideal cases (finite-length probes, non-Maxwellian
-distributions, etc.) based on high-fidelity simulation results. The latter
-class incorporate appropriate interpolation schemes which make them continuous
-within their domain, as well as scaling based on dimensional analyses
-(Buckingham's pi theorem [@buckingham]) which make the results scale to a
-different orders of magnitudes of physical parameters than the originating
+others cover non-ideal cases (finite-length probes [@marholm], non-Maxwellian
+distributions [@darian], etc.) based on high-fidelity simulation results. The
+latter class incorporate appropriate interpolation schemes which make them
+continuous within their domain, as well as scaling based on dimensional
+analyses (Buckingham's pi theorem [@buckingham]) which make the results scale
+to a different orders of magnitudes of physical parameters than the originating
 simulations. Evaluating a characteristic for a set of parameters is
 near-instantaneous compared to running a high-fidelity simulation, which can
 take hours for each data point. As such, these functions may be seen as a
