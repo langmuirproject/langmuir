@@ -42,14 +42,16 @@ to apply for other researchers.
 
 Langmuir is a library of Python functions that act as characteristics $I(V)$,
 some of which are merely analytical expressions for idealized cases, while
-others cover non-ideal cases based on high-fidelity simulation results. The
-latter class incorporate appropriate interpolation schemes which make them
-continuous within their domain, as well as scaling based on dimensional
-analyses (Buckingham's pi theorem [@buckingham]) which make the results scale to
-a wide range of physical parameters. Evaluating a characteristic for a set of
-parameters is near-instantaneous compared to running a high-fidelity
-simulation, which can take hours for each data point. As such, these functions
-may be seen as a simple kind of reduced-order models.
+others cover non-ideal cases (finite-length probes, non-Maxwellian
+distributions, etc.) based on high-fidelity simulation results. The latter
+class incorporate appropriate interpolation schemes which make them continuous
+within their domain, as well as scaling based on dimensional analyses
+(Buckingham's pi theorem [@buckingham]) which make the results scale to a
+different orders of magnitudes of physical parameters than the originating
+simulations. Evaluating a characteristic for a set of parameters is
+near-instantaneous compared to running a high-fidelity simulation, which can
+take hours for each data point. As such, these functions may be seen as a
+simple kind of reduced-order models.
 
 # Statement of need
 
@@ -63,13 +65,13 @@ infer plasma parameters.
 Conventionally, plasma parameters are inferred using expressions derived from
 analytical theories. The OML theory for cylindrical probes, for example,
 predict that for probes with large enough voltage, the slope
-$\mathrm{d}I^2/\mathrm{d}V=cn_e$ where $c$ is a known constant and $n_e$ is the
+$\mathrm{d}I^2/\mathrm{d}V=Cn_e$ where $C$ is a known constant and $n_e$ is the
 electron density. Two or more probes can thus be used to calculate the slope
 and in turn the density [@jacobsen]. The accuracy of such methods is of course
 limited by the assumptions made in the analytical derivations.
 
-Instead, we take a more general point of view [@marholm]. A set of
-measurements $\{\hat I_p\}_{p=1}^N$ taken at voltages ${V_p}_{p=1}^N$ by
+Instead, we take a more general point of view, as proposed by @marholm. A set
+of measurements $\{\hat I_p\}_{p=1}^N$ taken at voltages $\{V_p\}_{p=1}^N$ by
 probe(s) with a characteristic $I(V; \mathbf P)$, should follow this system of
 equations:
 $$
@@ -77,13 +79,15 @@ $$
 $$
 Finding the unknowns (typically $\mathbf P$) such that this system is satisfied
 is referred to as the *inverse problem*. The inverse problem can in principle
-be solved by any suitable computational method, available from other software
-packages, but programmatic access to the characteristic is a prerequisite.
-Langmuir provides this for a range of more realistic scenarios (e.g. cylindric
-probes of finite length or radius), and can easily be extended by new models as
-the need arise. Moreover, Langmuir has an extensive tutorial-like
-documentation, which serves to demonstrate possible computational approaches
-with which Langmuir can be used.
+be solved by any suitable computational method, which is already available in
+other software packages, but programmatic access to the characteristic is a
+prerequisite. This is where Langmuir comes in, as an enabling technology. In
+addition, the tutorial-like documentation is an important part of the
+contribution, as it serves to demonstrate how Langmuir may be used together
+with third party software to solve the inverse problem.
+
+Langmuir has already been used to solve real-world problems [@marholm,
+@guthrie], and continue to be used in ongoing research.
 
 # Acknowledgements
 
