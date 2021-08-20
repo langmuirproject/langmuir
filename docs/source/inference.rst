@@ -76,14 +76,14 @@ The loop carries out the fit over each sample, and to increase our chance of suc
 
 Because numerical algorithms often work best for numbers close to unity, we also scale the coefficients :math:`(n_e, V_0)`. This is conveniently handled by ``least_squares`` itself, which accepts an argument ``x_scale`` with numbers of typical magnitude. The residuals are in the order of microampére's and also needs to be scaled. However, although ``least_squares`` has an argument ``f_scale`` for the residuals, it is not always in use. We therefore multiply the residuals by ``1e6`` ourselves.
 
-The residual function may also accept arguments that is not part of the optimization, in our case the four currents stored in the vector ``I`` and the electron temperature ``T``. These are passed through to ``residual`` using the ``args`` argument of ``least_squares``. Although the electron temperature is technically an unknown parameter (an input to the forward model), it is hard to infer it because the characteristic only depends very weakly on it (see [Hoang]_, [Barjatya]_, [Marholm2]_). We therefore specify it manually. This could just be a representative number (2000K in our case), or it could be a number from another instrument or model. For our example with synthetic data it is also possible to use the ground truth directly, by replacing the line ``T = 2000`` with ``T = data['Te'][i]``. Execution results in the following plots:
+The residual function may also accept arguments that are not part of the optimization, in our case the four currents stored in the vector ``I`` and the electron temperature ``T``. These are passed through to ``residual`` using the ``args`` argument of ``least_squares``. Although the electron temperature is technically an unknown parameter (an input to the forward model), it is hard to infer it because the characteristic only depends very weakly on it (see [Hoang]_, [Barjatya]_, [Marholm2]_). We therefore specify it manually. This could just be a representative number (2000K in our case), or it could be a number from another instrument or model. For our example with synthetic data it is also possible to use the ground truth directly, by replacing the line ``T = 2000`` with ``T = data['Te'][i]``. Execution results in the following plots:
 
 .. image:: ne_OML.png
 .. image:: V0_OML.png
 
 The density agrees well with both the ground truth, as well as densities inferred with the Jacobsen-Bekkeng method. Close inspection, however, reveals a small discrepancy between our method and the Jacobsen-Bekkeng method. This is due to the fact that the system is overdetermined (inferring 2 parameters from 4 measurements), and the Jacobsen-Bekkeng method minimizes a squared residual in :math:`\mathrm{d}I^2/\mathrm{d}V`, whereas our method minimizes a squared residual in :math:`I` itself. Removing two of the bias voltages lead to perfect agreement. The method captures a trend in the floating potential but cannot make accurate predictions of it.
 
-Now that the technique is established, we can proceed by assuming that the finite-length model is a perfect representation of reality, and fitting the currentst to the finite-length characteristic. This is simply a matter of substituting the following lines::
+Now that the technique is established, we can proceed by assuming that the finite-length model is a perfect representation of reality, and fitting the currents to the finite-length characteristic. This is simply a matter of substituting the following lines::
 
     model_truth = finite_length_current
     model_pred = finite_length_current
@@ -95,5 +95,71 @@ During data synthesis we will receive warnings about the normalized voltage :mat
 
 As is to be expected, the inferred density is close to the ground truth. For finite-length effects, the inferred density is not entirely independent of the specified temperature ``T``, and this causes some error. The dependence is weak enough, however, that the error is not severe. The accuracy is also degraded for lower altitudes due to the aforementioned extrapolation. The floating potential is not very accurate, but then again, this cannot be expected when it was not accurate for the simpler case. Finally, it is interesting to compare with the Jacobsen-Bekkeng method, since this is indicative of the error caused by neglecting end effects.
 
-.. Machine learning approaches
-.. ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Inversion by machine learning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Another way to solve the inverse problem is by machine learning, or more
+specifically, by regression. This was first described in [Chalaturnyk]_ and
+[Guthrie]_, and we shall carry out a similar (though not entirely identical)
+procedure here. We consider a plasma parameter (here: the electron density
+:math:`n_e`) to be approximated by some function :math:`f` of measured
+currents:
+
+.. math::
+   n_e \approx f(\hat I_1, \hat I_2, ..., \hat I_N)
+
+The function represents, in our case, a machine learning network, and has a
+number of coefficients that will be determined by fitting (training) it to
+synthetic data with known densities :math:`n_e`. Once the network is trained,
+it can be used to predict densities from actual measurements. The procedure
+can be split in three parts, as seen in the example code:
+
+.. literalinclude:: ../../demo/inverse_rbf.py
+
+First, :math:`N` synthetic data points are generated by randomly selecting
+densities (:math:`n`s), temperatures (:math:`T`s) and floating potentials
+(:math:`V_0`s) from appropriate ranges, and compute corresponding currents
+using Langmuir. Beware that if the ranges do not properly cover the values
+expected in the actual data, the network may have to extrapolate, which often
+result in wildly inaccurate predictions.
+
+Second, we train a *radial basis function* (RBF) network from the localreg
+library, although one could in principle train any regression network (e.g.,
+using TensorFlow). Remember, however, that from a machine learning
+point-of-view, this is a small problem that is not well served by deep neural
+networks with many degrees of freedom. Regardless of choice, it is important to
+test the network's performance (quantitatively!) on data which was not used in
+training. We use 80\% of the synthetic data for training, and set aside the
+remaining part for testing. The testing reveal that the root mean square (RMS)
+of the relative density error is about 3--4% (depending on the seed of the
+random number generator). The correlation plot also show good agreement between
+prediction and ground truth:
+
+.. image:: corr_ML.png
+
+Third and finally, once the network has been tested, it is ready to be used on
+real data (or in our case data generated with `generate_synthetic_data()`). For
+a real experiment, one should probably store the trained network to hard drive
+for later re-use (and a permanent archive for reproducability), but here we
+settle for predicting and plotting the density within the same script:
+
+.. image:: ne_ML.png
+
+When a parameter can span multiple orders of magnitudes, such as the density
+often can, one is often just interested in the most significant figures.
+:math:`1.00\cdot 10^12\,\mathrm{m^{-3}}` and :math:`0.99\cdot
+10^12\,\mathrm{m^{-3}}` are in practice indistinguishable, whereas there's a
+huge difference between :math:`1\cdot 10^10\,\mathrm{m^{-3}}` and :math:`2\cdot
+10^10\,\mathrm{m^{-3}}`, although the difference between the two pairs of
+numbers are the same. It then makes sense to minimize the *relative error*
+between the predicted density :math:`\hat n_e` and the true density :math:`n_e`,
+
+.. math::
+   \frac{\hat n_e-n_e}{n_e},
+
+rather than the absolute error. For the same reason, you want to distribute the
+training data logarithmically, with data points packed more densely for low
+densities. Otherwise, few data points would have low order of magnitude, and
+minimizing the error for those orders-of-mangitude would not be prioritized
+during training. In the above example the range of densities is not really that
+large, but relative errors and logarithmic distributions have nonetheless been
+used throughout, for the sake of demonstration.
