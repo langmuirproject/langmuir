@@ -7,4 +7,5 @@ Examples
 
    floating_potential
    beta
+   gui
    inference

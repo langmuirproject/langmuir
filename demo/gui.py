@@ -6,14 +6,13 @@ from scipy.special import erf
 
 normalization='OML'
 
-elec = Species(n=35e10, eV=0.08)
-elec = Electron(n=35e10, eV=0.08)
+elec = Electron()
 geo = Cylinder(r=0.1*elec.debye, l=20*elec.debye)
 z = np.linspace(0, 20, 1000)
 I = finite_length_current_density(geo, elec, zeta=z, eta=25, normalization=normalization)
 
 len_min = 1
-len_max = 40 #100
+len_max = 40
 eta_min = -10
 eta_max = 100
 
