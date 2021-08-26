@@ -12,7 +12,7 @@ model = l.finite_length_current
 Vs = np.array([2, 3, 4, 5]) # bias voltages
 
 """
-GENERATE SYNTHETIC DATA USING LANGMUIR
+PART 1: GENERATE SYNTHETIC DATA USING LANGMUIR
 """
 
 def rand_uniform(N, range):
@@ -35,7 +35,7 @@ for i, n, T, V0 in zip(count(), ns, Ts, tqdm(V0s)):
     Is[i] = model(geo, l.Electron(n=n, T=T), V=V0+Vs)
 
 """
-TRAIN AND TEST THE REGRESSION NETWORK
+PART 2: TRAIN AND TEST THE REGRESSION NETWORK
 """
 
 # Use M first data points for training, the rest for testing.
@@ -53,7 +53,7 @@ plot_corr(ax, ns[M:], pred, log=True)
 print("RMS of relative density error: {:.1f}%".format(100*rms_rel_error(ns[M:], pred)))
 
 """
-PREDICT PLASMA PARAMETERS FROM ACTUAL DATA
+PART 3: PREDICT PLASMA PARAMETERS FROM ACTUAL DATA
 """
 
 data = l.generate_synthetic_data(geo, Vs, model=model)

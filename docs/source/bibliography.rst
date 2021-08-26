@@ -28,3 +28,7 @@ Bibliography
 .. [IRI] The IRI Ionospheric Model.
 
 .. [MSISE] The MSISE Ionospheric Model.
+
+.. [Chalaturnyk] J. Chalaturnyk and R. Marchand, *A First Assessment of a Regression-Based Interpretation of Langmuir Probe Measurements*, Frontiers in Physics, 7, 2019.
+
+.. [Guthrie] J. Guthrie, R. Marchand and S. Marholm, *Inference of plasma parameters from fixed-bias multi-needle Langmuir probes (m-NLP)*, Measurement Science and Technology, 32, 2021.
