@@ -1,7 +1,7 @@
 Normalization
 -------------
 
-The characteristics of Langmuir probes do not depend on every conceivable parameter such as density, temperature, probe length, etc. independently, but instead upon a smaller set of non-dimensional groups of such parameters [Laframboise]_, [Marholm]_. One such group is the normalized voltage:
+The characteristics of Langmuir probes do not depend on every conceivable parameter such as density, temperature, probe length, etc. independently, but instead upon a smaller set of non-dimensional groups (:math:`\pi`-groups) of such parameters [Laframboise]_, [Marholm]_. One such group is the normalized voltage:
 
 .. math::
 
@@ -13,7 +13,7 @@ Similarly, a normalized current :math:`I/I_0` may be defined, where :math:`I` is
 
 - ``'th'``: Normalized by the :ref:`thermal current <thermal-current>`. Often the most natural choice.
 - ``'oml'``: Normalized by the current according to :ref:`the OML theory <OML>`. This is useful for comparing other models with OML theory.
-- ``'thmax'``:  Normalized by the thermal current of a Maxwellian plasma regardless of what the distribution actually is. Probably only useful for comparison with [Darian]_.
+- ``'thmax'``:  Normalized by the thermal current of a Maxwellian plasma regardless of what the distribution actually is. This is the normalization used in [Darian]_.
 
 Finally, all lengths are normalized by the Debye length :math:`\lambda_D`. Below is a complete example of obtaining the normalized current for a cylindrical probe of radius :math:`0.2\lambda_D` and length :math:`10\lambda_D` with :math:`\eta=10`::
 
@@ -22,6 +22,6 @@ Finally, all lengths are normalized by the Debye length :math:`\lambda_D`. Below
     >>> OML_current(geometry, sp, eta=10, normalization='th')
     3.7388259506315147
   
-Since only the non-dimensional groups determine the normalized collected current, we do not care about the exact parameters of the species, but leave them at the default. Note that in this case it actually does not matter what the probe size is, because the thermal current depends on the probe size in the same way as the current predicted by OML theory. This may differ for other models, however. See also :ref:`example_normalization`.
+Since only the non-dimensional groups determine the normalized collected current, we do not care about the exact parameters of the species, but leave them at the default. Note that in this case it actually does not matter what the probe size is, because the thermal current depends on the probe size in the same way as the current predicted by OML theory. This may differ for other models, however.
 
 Note that the non-dimensional groups are specific to each species, e.g., the voltage normalized with respect to electrons is not the same as with respect to ions. If a multi-species plasma is specified, the normalization used will be with respect to the first species in the list. E.g., if electrons are the first element in the list, :math:`\eta=eV/kT_e` where :math:`e` is the elementary charge and :math:`T_e` is the electron temperature.
