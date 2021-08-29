@@ -194,9 +194,17 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
         F = (1.+8*alpha)/(1.+24*alpha)
     else:
         C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
-        D = (1.+24*alpha*((kappa-1.5)**2/((kappa-2.)*(kappa-3.))))/(1.+15*alpha*((kappa-1.5)/(kappa-2.5)))
-        E = 4.*alpha*kappa*(kappa-1.)/( (kappa-2.)*(kappa-3.)+24*alpha*(kappa-1.5)**2 )
-        F = ((kappa-1.)*(kappa-2.)*(kappa-3.)+8*alpha*(kappa-3.)*(kappa-1.5)**2) /( (kappa-2.)*(kappa-3.)*(kappa-1.5)+24*alpha*(kappa-1.5)**3 )
+        if alpha == 0:
+            D = 1.
+            E = 0.
+            F = (kappa-1.) / (kappa-1.5)
+        else:
+            assert kappa > 3., "Invalid value: for alpha > 0, kappa must be larger than 3."
+            D = (1. + 24 * alpha * ((kappa - 1.5) ** 2 / ((kappa - 2.) * (kappa - 3.)))) / (
+                        1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
+            E = 4. * alpha * kappa * (kappa - 1.) / ((kappa - 2.) * (kappa - 3.) + 24 * alpha * (kappa - 1.5) ** 2)
+            F = ((kappa - 1.) * (kappa - 2.) * (kappa - 3.) + 8 * alpha * (kappa - 3.) * (kappa - 1.5) ** 2) / (
+                        (kappa - 2.) * (kappa - 3.) * (kappa - 1.5) + 24 * alpha * (kappa - 1.5) ** 3)
 
     if normalization is None:
         I0 = normalization_current(geometry, species)
@@ -243,16 +251,22 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
 
         else:
             C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
-            D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
-                (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
-            E = 4. * alpha * kappa * \
-                (kappa - 1.) / ((kappa - .5) *
-                                (kappa - 1.5) + 3. * alpha * (kappa - 1.5)**2)
+            if alpha == 0:
+                I[indices_p] = (2. / np.sqrt(np.pi)) * I0 * C
+                I[indices_p] *= (eta[indices_p] / (kappa - 1.5)) ** (1. - kappa)
+                I[indices_p] *= hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p]))
+            else:
+                assert kappa > 3., "Invalid value: for alpha > 0, kappa must be larger than 3."
+                D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
+                    (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
+                E = 4. * alpha * kappa * \
+                    (kappa - 1.) / ((kappa - .5) *
+                                    (kappa - 1.5) + 3. * alpha * (kappa - 1.5)**2)
 
-            I[indices_p] = (2./np.sqrt(np.pi))*I0 * C * D * (eta[indices_p]/(kappa-1.5))**(1.-kappa) * \
-                (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
-                ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
-                (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
+                I[indices_p] = (2./np.sqrt(np.pi))*I0 * C * D * (eta[indices_p]/(kappa-1.5))**(1.-kappa) * \
+                    (((kappa - 1.) / (kappa - 3.)) * E * (eta[indices_p]**2) * hyp2f1(kappa - 3, kappa + .5, kappa - 2., 1. - (kappa - 1.5) / (eta[indices_p])) + \
+                    ((kappa - 1.5 - 2. * (kappa - 1.) * eta[indices_p]) / (kappa - 2.)) * E * eta[indices_p] * hyp2f1(kappa - 2, kappa + .5, kappa - 1., 1. - (kappa - 1.5) / (eta[indices_p])) +
+                    (1. + E * eta[indices_p] * (eta[indices_p]-((kappa-1.5)/(kappa-1.)))) * hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p])))
 
     else:
         raise ValueError('Geometry not supported: {}'.format(geometry))
