@@ -1,7 +1,7 @@
 """
 Copyright 2018
     Sigvald Marholm <marholm@marebakken.com>
-    Diako Darian <diakod@math.uio.no>
+    Diako Darian <diako.darian@gmail.com>
 
 This file is part of langmuir.
 
