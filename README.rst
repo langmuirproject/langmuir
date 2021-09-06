@@ -2,7 +2,7 @@ Langmuir
 ========
 
 .. image:: https://travis-ci.com/langmuirproject/langmuir.svg?branch=master
-    :target: https://travis-ci.com/langmuirproject/langmuir
+    :target: https://app.travis-ci.com/langmuirproject/langmuir
 
 .. image:: https://coveralls.io/repos/github/langmuirproject/langmuir/badge.svg?branch=master
     :target: https://coveralls.io/github/langmuirproject/langmuir?branch=master
