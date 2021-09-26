@@ -200,12 +200,12 @@ def test_valid_kappa_and_alpha_values(kappa, alpha, eta):
     for geo in geometries:
         if alpha == 0:
             if kappa == 1.5:
-                with pytest.raises(AssertionError):
+                with pytest.raises(ValueError):
                     OML_current(geo, sp, eta=eta)
             else:
                 assert OML_current(geo, sp, eta=eta)
         else:
-            with pytest.raises(AssertionError):
+            with pytest.raises(ValueError):
                 OML_current(geo, sp, eta=eta)
 
 

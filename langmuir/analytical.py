@@ -195,13 +195,15 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
     else:
         C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
         if alpha == 0:
-            assert kappa > 1.5, "Invalid value: kappa must be larger than 3/2."
+            if kappa <= 1.5:
+                raise ValueError("Invalid value: kappa must be larger than 3/2.")
             D = 1.
             E = 0.
             F = (kappa-1.) / (kappa-1.5)
         else:
             # For Kappa-Cairns distribution, kappa must be bigger than 3:
-            assert kappa > 3., "Invalid value: for alpha > 0, kappa must be larger than 3."
+            if kappa <= 3.:
+                raise ValueError("Invalid value: for alpha > 0, kappa must be larger than 3.")
             D = (1. + 24 * alpha * ((kappa - 1.5) ** 2 / ((kappa - 2.) * (kappa - 3.)))) / (
                         1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
             E = 4. * alpha * kappa * (kappa - 1.) / ((kappa - 2.) * (kappa - 3.) + 24 * alpha * (kappa - 1.5) ** 2)
@@ -254,12 +256,14 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
         else:
             C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
             if alpha == 0:
-                assert kappa > 1.5, "Invalid value: kappa must be larger than 3/2."
+                if kappa <= 1.5:
+                    raise ValueError("Invalid value: kappa must be larger than 3/2.")
                 I[indices_p] = (2. / np.sqrt(np.pi)) * I0 * C
                 I[indices_p] *= (eta[indices_p] / (kappa - 1.5)) ** (1. - kappa)
                 I[indices_p] *= hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p]))
             else:
-                assert kappa > 3., "Invalid value: for alpha > 0, kappa must be larger than 3."
+                if kappa <= 3.:
+                    raise ValueError("Invalid value: for alpha > 0, kappa must be larger than 3.")
                 D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
                     (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
                 E = 4. * alpha * kappa * \
