@@ -27,6 +27,8 @@ from scipy.constants import value as constants
 from scipy.special import gamma, erfc, hyp2f1
 from copy import deepcopy
 import numpy as np
+import warnings
+
 
 def normalization_current(geometry, species):
     """
@@ -187,23 +189,38 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
     indices_n = np.where(eta < 0)[0]   # indices for repelled particles
     indices_p = np.where(eta >= 0)[0]  # indices for attracted particles
 
+    if kappa < 1.5:
+        warnings.warn("kappa < 1.5 may result in invalid values for the computed OML current.")
+
     if kappa == float('inf'):
         C = 1.0
         D = (1.+24*alpha)/(1.+15*alpha)
         E = 4.*alpha/(1.+24*alpha)
         F = (1.+8*alpha)/(1.+24*alpha)
     else:
+        # Note: Problematic kappa values in the expression for C:
+        #   - RuntimeWarning: if kappa < 1.5, then numpy.sqrt returns nan, without throwing any exceptions
         C = np.sqrt(kappa-1.5)*gamma(kappa-1.)/gamma(kappa-0.5)
         if alpha == 0:
-            if kappa <= 1.5:
-                raise ValueError("Invalid value: kappa must be larger than 3/2.")
+            # Problematic kappa values:
+            #   - ZeroDivisionError for kappa= 1.5
+            if kappa == 1.5:
+                raise ValueError("Invalid value: for alpha = 0, kappa cannot be 3/2.")
             D = 1.
             E = 0.
             F = (kappa-1.) / (kappa-1.5)
         else:
-            # For Kappa-Cairns distribution, kappa must be bigger than 3:
-            if kappa <= 3.:
-                raise ValueError("Invalid value: for alpha > 0, kappa must be larger than 3.")
+            # Note: Problematic kappa values:
+            # - in D:
+            #       - ZeroDivisionError for kappa = 2.0, 2.5, 3.0
+            # - in E:
+            #       - nan for kappa = [5+72*alpha pm sqrt(1-72*alpha)] / [2*(1+24*alpha)]
+            # - in F:
+            #       - ZeroDivisionError for kappa = 1.5
+            #       - nan for kappa = [5+72*alpha pm sqrt(1-72*alpha)] / [2*(1+24*alpha)]
+            if kappa in [1.5, 2.0, 2.5, 3.0]:
+                raise ValueError("Invalid value: for alpha > 0, kappa cannot be 1.5, 2.0, 2.5, or, 3.0")
+
             D = (1. + 24 * alpha * ((kappa - 1.5) ** 2 / ((kappa - 2.) * (kappa - 3.)))) / (
                         1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
             E = 4. * alpha * kappa * (kappa - 1.) / ((kappa - 2.) * (kappa - 3.) + 24 * alpha * (kappa - 1.5) ** 2)
@@ -227,6 +244,10 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
             I[indices_n] = I0 * C * D * np.exp(eta[indices_n]) * (1. + E * -eta[indices_n] * (-eta[indices_n] + 4.))
 
         else:
+            # Note: Problematic kappa values:
+            #   - ZeroDivisionError for kappa = 1.0, 1.5
+            if kappa in [1.0, 1.5]:
+                raise ValueError("Invalid value: kappa cannot be 1.0 or 1.5")
             I[indices_n] = I0 * C * D * (1. - eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * (-eta[indices_n]) * (-eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
@@ -243,6 +264,11 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
                                            (-eta[indices_n]) * (-eta[indices_n] + 4.))
 
         else:
+            # Note: Problematic kappa values:
+            #   - ZeroDivisionError for kappa = 1.0, 1.5
+            if kappa in [1.0, 1.5]:
+                raise ValueError("Invalid value: kappa cannot be 1.0 or 1.5")
+
             I[indices_n] = I0 * C * D * (1. - eta[indices_n] / (kappa - 1.5))**(
                 1. - kappa) * (1. + E * (-eta[indices_n]) * (-eta[indices_n] + 4. * ((kappa - 1.5) / (kappa - 1.))))
 
@@ -254,16 +280,28 @@ def OML_current(geometry, species, V=None, eta=None, normalization=None):
                            np.exp(eta[indices_p]) * (1. + E * eta[indices_p] * (eta[indices_p] - 4.)) * erfc(np.sqrt(eta[indices_p])))
 
         else:
+            # Note: Problematic kappa values in the expression for C:
+            #   - RuntimeWarning: if kappa < 1.5, then numpy.sqrt returns nan, without throwing any exceptions
             C = np.sqrt(kappa - 1.5) * (kappa - .5) / (kappa - 1.0)
             if alpha == 0:
-                if kappa <= 1.5:
-                    raise ValueError("Invalid value: kappa must be larger than 3/2.")
+                # Note: Problematic kappa values:
+                #   - ZeroDivisionError for kappa = 1.5
+                if kappa == 1.5:
+                    raise ValueError("Invalid value: kappa cannot be 3/2.")
                 I[indices_p] = (2. / np.sqrt(np.pi)) * I0 * C
                 I[indices_p] *= (eta[indices_p] / (kappa - 1.5)) ** (1. - kappa)
                 I[indices_p] *= hyp2f1(kappa - 1., kappa + .5, kappa, 1. - (kappa - 1.5) / (eta[indices_p]))
             else:
-                if kappa <= 3.:
-                    raise ValueError("Invalid value: for alpha > 0, kappa must be larger than 3.")
+                # Note: Problematic kappa values:
+                # - in D:
+                #       - ZeroDivisionError for kappa = 0.5 and 2.5
+                # - in E:
+                #       - ZeroDivisionError for kappa = 1.5 and kappa = 0.5*((1+9*alpha)/(1+3*alpha))
+                # - in the expression for I[indices_p]:
+                #       - ZeroDivisionError for kappa = 1.0, 1.5, 2.0, 3.0
+                if kappa in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 0.5*(1.+9.*alpha)/(1.+3.*alpha)]:
+                    raise ValueError("Invalid value: for alpha > 0, kappa cannot be " + str(kappa))
+
                 D = (1. + 3 * alpha * ((kappa - 1.5) / (kappa - 0.5))) / \
                     (1. + 15 * alpha * ((kappa - 1.5) / (kappa - 2.5)))
                 E = 4. * alpha * kappa * \
