@@ -117,6 +117,10 @@ class Species(object):
         if self.kappa == float('inf'):
             self.debye = np.sqrt(eps0*k*self.T/(self.q**2*self.n))*np.sqrt((1.0 + 15.0*self.alpha)/(1.0 + 3.0*self.alpha))
         else:
+            # Note: Problematic kappa values:
+            #   - ZeroDivisionError for kappa = 1.0, 1.5
+            if self.kappa in [0.5, 2.5]:
+                raise ValueError("Invalid value: kappa cannot be 0.5 or 2.5")
             self.debye = np.sqrt(eps0 * k * self.T / (self.q**2 * self.n)) *\
                          np.sqrt(((self.kappa - 1.5) / (self.kappa - 0.5)) *\
                         ((1.0 + 15.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 2.5))) / (1.0 + 3.0 * self.alpha * ((self.kappa - 1.5) / (self.kappa - 0.5)))))

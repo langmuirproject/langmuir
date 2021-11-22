@@ -155,3 +155,9 @@ def test_debye():
 def test_negative_temperature(caplog):
     sp = Species(n=1e11, T=-1)
     assert(caplog.records[0].levelname == 'WARNING')
+
+
+@pytest.mark.parametrize("kappa, alpha", [(.5, 0), (.5, 0.2), (2.5, 0), (2.5, 0.2)])
+def test_invalid_kappa_values(kappa, alpha):
+    with pytest.raises(ValueError):
+        Electron(n=1e11, T=1000, kappa=kappa, alpha=alpha)

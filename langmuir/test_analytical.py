@@ -190,6 +190,34 @@ def test_OML_current_kappa_cairns():
     I = OML_current(geo, sp_k, eta=-5)
     assert(I == approx(-2.26604e-11))
 
+
+@pytest.mark.parametrize("kappa, alpha, eta", [(.5, 0, 5), (.5, 0.2, 5), (.5, 0, -5), (.5, 0.2, -5),
+                                               (1., 0, 5), (1., 0.2, 5), (1., 0, -5), (1., 0.2, -5),
+                                               (1.5, 0, 5), (1.5, 0, -5), (1.5, 0, -5), (1.5, 0.2, -5),
+                                               (2.0, 0, 5), (2, 0.2, 5), (2, 0, -5), (2, 0.2, -5),
+                                               (2.5, 0, 5), (2.5, 0.2, 5), (2.5, 0, -5), (2.5, 0.2, -5),
+                                               (3, 0, 5), (3, 0.2, 5), (3, 0, -5), (3, 0.2, -5)])
+def test_valid_kappa_and_alpha_values(kappa, alpha, eta):
+    if kappa in [0.5, 2.5]:
+        with pytest.raises(ValueError):
+            Electron(n=1e11, T=1000, kappa=kappa, alpha=alpha)
+        return
+    else:
+        sp = Electron(n=1e11, T=1000, kappa=kappa, alpha=alpha)
+
+    geometries = [Cylinder(0.255e-3, 25e-3), Sphere(0.255e-3)]
+    for geo in geometries:
+        if alpha == 0:
+            if kappa in [1., 1.5]:
+                with pytest.raises(ValueError):
+                    OML_current(geo, sp, eta=eta)
+            else:
+                assert OML_current(geo, sp, eta=eta)
+        else:
+            with pytest.raises(ValueError):
+                OML_current(geo, sp, eta=eta)
+
+
 def test_jacobsen_density_identity():
     # Tests that the Jacobsen methods agrees perfectly with OML
     n = [1e11, 5e11, 1e12]
