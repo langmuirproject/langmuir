@@ -67,7 +67,7 @@ def generate_synthetic_data(geometry,
 
         plasma = [Electron(n=cap(res['ne'][i]), T=Te)
                  ,Oxygen(n=cap(res['nO+'][i]), T=Ti)
-                 ,Oxygen(n=cap(res['nO2+'][i]), T=Ti, Z=2)
+                 ,Species(n=cap(res['nO2+'][i]), T=Ti, amu=32)
                  ,Species(n=cap(res['nNO+'][i]), T=Ti, amu=30)
                  ,Hydrogen(n=cap(res['nH+'][i]), T=Ti)
                  ]
