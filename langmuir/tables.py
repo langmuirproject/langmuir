@@ -5,6 +5,20 @@ from langmuir.geometry import *
 from langmuir.analytical import *
 from pprint import pprint
 
+TABLE_NAMES = [
+    "laframboise sphere",
+    "laframboise cylinder",
+    "darian-marholm uncomplete sphere",
+    "darian-marholm uncomplete cylinder",
+    "darian-marholm sphere",
+    "darian-marholm cylinder",
+    "laframboise-darian-marholm sphere",
+    "laframboise-darian-marholm cylinder",
+    "laframboise-darian-marholm unstructured sphere",
+    "laframboise-darian-marholm unstructured cylinder",
+]
+
+
 # https://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
 def cartesian_product(*arrays):
     """

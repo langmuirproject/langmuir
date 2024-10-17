@@ -24,7 +24,7 @@ from langmuir.tables import *
 from langmuir.geometry import *
 from langmuir.species import *
 from langmuir.misc import *
-from scipy.interpolate import griddata, interpn
+from scipy.interpolate import RegularGridInterpolator, LinearNDInterpolator
 from scipy.constants import value as constants
 from copy import deepcopy
 import scipy.special as special
@@ -32,7 +32,7 @@ import numpy as np
 import os
 
 def finite_radius_current(geometry, species, V=None, eta=None, normalization=None,
-                          table='laframboise-darian-marholm'):
+                          table=None):
     """
     A current model taking into account the effects of finite radius by
     interpolating between tabulated normalized currents. The model only
@@ -128,6 +128,12 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
     else:
         eta = make_array(eta)
 
+    if table is None:
+        if alpha==0 and kappa==np.inf:
+            table = 'laframboise'
+        else:
+            table = 'laframboise-darian-marholm'
+
     eta = deepcopy(eta)
 
     I = np.zeros_like(eta)
@@ -156,39 +162,13 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye
-    # method = 'linear'
+
+    lerp = LERPERS[table]
 
     if "darian-marholm" in table:
-        table = get_table(table)
-
-        # TBD: Still need to use griddata for unstructured table
-        # TBD: Should change default to use pure Laframboise table when possible
-
-        # pts = table['points']
-        # vals = table['values'].reshape(-1)
-        # I[indices_p] = I0*griddata(pts, vals, (1/kappa, alpha, R, eta[indices_p]), method=method)
-
-        pts = table['points']
-        axes = table['axes']
-        vals = table['values']
-        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]), bounds_error=False, fill_value=np.nan)
-
+        I[indices_p] = I0*lerp((1/kappa, alpha, R, eta[indices_p]))
     else:
-        table = get_table(table)
-
-        # TBD: Still need to use griddata for unstructured table
-        # TBD: Should change default to use pure Laframboise table when possible
-
-        # pts = table['points']
-        # vals = table['values'].reshape(-1)
-        # I[indices_p] = I0*griddata(pts, vals, (R, eta[indices_p]), method=method)
-
-        pts = table['points']
-        axes = table['axes']
-        vals = table['values']
-        print(axes)
-        I[indices_p] = I0*interpn(axes, vals, (R, eta[indices_p]), bounds_error=False, fill_value=np.nan)
-
+        I[indices_p] = I0*lerp((R, eta[indices_p]))
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
 
@@ -198,3 +178,27 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         logger.warning("Data points occurred outside the domain of tabulated values resulting in nan")
 
     return I[0] if len(I) == 1 else I
+
+def get_fr_lerper(table_name):
+    """
+    Returns a linear interpolator. For unstructured data, it will return an
+    LinearNDInterpolator object (triangulates the parameter space). For regular
+    data it will return a RegularGridInterpolator object.
+    """
+
+    table = get_table(table_name)
+    if "unstructured" in table_name:
+        pts = table['points']
+        vals = table['values'].reshape(-1)
+        lerper = LinearNDInterpolator(pts, vals)
+    else:
+        pts = table['points']
+        axes = table['axes']
+        vals = table['values']
+        lerper = RegularGridInterpolator(axes, vals, bounds_error=False, fill_value=np.nan)
+
+    return lerper
+
+# Creating these lerpers as global constant objects means that they will only
+# be initialized once, which improves performance.
+LERPERS = {table_name: get_fr_lerper(table_name) for table_name in TABLE_NAMES}
