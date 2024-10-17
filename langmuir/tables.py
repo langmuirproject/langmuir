@@ -3,6 +3,7 @@ from scipy.interpolate import griddata
 from langmuir.species import *
 from langmuir.geometry import *
 from langmuir.analytical import *
+from pprint import pprint
 
 # https://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
 def cartesian_product(*arrays):
@@ -63,22 +64,31 @@ def get_table(name, provide_points=True):
         - darian-marholm cylinder
         - laframboise-darian-marholm sphere
         - laframboise-darian-marholm cylinder
+        - laframboise-darian-marholm unstructured sphere
+        - laframboise-darian-marholm unstructured cylinder
 
-    The Laframboise tables are tables 5c and 6c in Laframboise's thesis.
-    These only cover Maxwellian velocity distributions. The Darian-Marholm
-    tables cover Kappa-Cairns (and subtype) distributions, although it is
-    not as accurate and with as wide input domain for Maxwellian as Laframboise.
-    The uncomplete version of Darian-Marholm tables are the ones presented in
-    the Darian-Marholm paper, whereas the completed version is the same but
-    with analytical values inserted for zero radius (OML theory) which are
-    not covered by the uncomplete version, and analytical thermal currents for
-    zero potential since these are not as accurate as the other currents in
-    the uncomplete Darian-Marholm paper. The Laframboise-Darian-Marholm tables
-    are the same as the complete Darian-Marholm tables except that the
-    Maxwellian values are replaced by those of Laframboise, which are more
-    accurate. These composed tables therefore offer the greatest accuracy and
-    range for any case. Since the Laframboise case has a larger grid, the
-    grid is no longer regular for the Laframboise-Darian-Marholm tables.
+    The Laframboise tables are tables 5c and 6c in Laframboise's thesis. These
+    only cover Maxwellian velocity distributions. The Darian-Marholm tables
+    cover Kappa-Cairns (and subtype) distributions, although it is not as
+    accurate and with as wide input domain for Maxwellian as Laframboise. The
+    uncomplete version of Darian-Marholm tables are the ones presented in the
+    Darian-Marholm paper, whereas the completed version is the same but with
+    analytical values inserted for zero radius (OML theory) which are not
+    covered by the uncomplete version, and analytical thermal currents for zero
+    potential since these are not as accurate as the other currents in the
+    uncomplete Darian-Marholm tables. The Laframboise-Darian-Marholm tables are
+    the same as the complete Darian-Marholm tables except that the Maxwellian
+    values are replaced by those of Laframboise. The regular
+    Laframboise-Darian-Marholm tables maintain a regular grid by only inserting
+    those values from Laframboise which already has a value in the complete
+    Darian-Marholm tables, whereas the unstructured Laframboise-Darian-Marholm
+    tables contain all the points from Laframboise for Maxwellian
+    distributions. Since the Laframboise tables have larger domain and finer
+    sampling, the unstructured Laframboise-Darian-Marholm tables form an
+    unstructured grid. While these composed tables therefore offer the greatest
+    accuracy and range for any case, interpolation from an unstructured grid
+    (with quite irregular domain and uneven sampling) tend to cause a jagged
+    result.
 
     The returned dictionary ``table`` has the following keys::
 
@@ -92,8 +102,8 @@ def get_table(name, provide_points=True):
         - ``table['values']`` is a 4D array (2D for Laframboise) of values.
           ``table['values'][i][j][k][l] is the value corresponding to
           table['axes'][0][i], table['axes'][1][j], and so forth. For
-          non-regular grids (the Laframboise-Darian-Marholm tables) it is
-          flattened to 1D.
+          non-regular grids (the unstructured Laframboise-Darian-Marholm
+          tables) it is flattened to 1D.
 
         - ``table['points']`` is a flatted array of 4-tuples (2-tuples for
           Laframboise tables), of 1/kappa, alpha, R, eta corresponding to
@@ -425,7 +435,7 @@ def get_table(name, provide_points=True):
         table['values'] = vals
         table['axes'] = (kappa_recips, alphas, Rs, etas)
 
-    elif name == 'laframboise-darian-marholm sphere':
+    elif name == 'laframboise-darian-marholm unstructured sphere':
 
         # Get darian-marholm table
         table = get_table('darian-marholm sphere')
@@ -448,7 +458,21 @@ def get_table(name, provide_points=True):
         table['points'] = np.concatenate((table['points'], points))
         table['values'] = np.concatenate((table['values'], values))
 
-    elif name == 'laframboise-darian-marholm cylinder':
+    elif name == 'laframboise-darian-marholm sphere':
+
+        # Get darian-marholm table
+        table = get_table('darian-marholm sphere')
+
+        # Substitute values in laframboise for values in table.
+        # Discard those values in laframboise which do not exist in
+        # darian-marholm to make the grid regular.
+
+        t = get_table('laframboise sphere')
+        ind_radius = np.searchsorted(t['axes'][0], table['axes'][2])
+        ind_eta = np.searchsorted(t['axes'][1], table['axes'][3])
+        table['values'][0,0,:,:] = t['values'][np.ix_(ind_radius, ind_eta)]
+
+    elif name == 'laframboise-darian-marholm unstructured cylinder':
 
         # Get darian-marholm table
         table = get_table('darian-marholm cylinder')
@@ -470,6 +494,20 @@ def get_table(name, provide_points=True):
         values = t['values'].reshape(-1)
         table['points'] = np.concatenate((table['points'], points))
         table['values'] = np.concatenate((table['values'], values))
+
+    elif name == 'laframboise-darian-marholm cylinder':
+
+        # Get darian-marholm table
+        table = get_table('darian-marholm cylinder')
+
+        # Substitute values in laframboise for values in table.
+        # Discard those values in laframboise which do not exist in
+        # darian-marholm to make the grid regular.
+
+        t = get_table('laframboise cylinder')
+        ind_radius = np.searchsorted(t['axes'][0], table['axes'][2])
+        ind_eta = np.searchsorted(t['axes'][1], table['axes'][3])
+        table['values'][0,0,:,:] = t['values'][np.ix_(ind_radius, ind_eta)]
 
     else:
 
