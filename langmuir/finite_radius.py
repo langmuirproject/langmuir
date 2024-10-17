@@ -24,7 +24,7 @@ from langmuir.tables import *
 from langmuir.geometry import *
 from langmuir.species import *
 from langmuir.misc import *
-from scipy.interpolate import griddata
+from scipy.interpolate import griddata, interpn
 from scipy.constants import value as constants
 from copy import deepcopy
 import scipy.special as special
@@ -156,18 +156,39 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye
+    method = 'linear'
 
     if "darian-marholm" in table:
         table = get_table(table)
+
+        # TBD: Still need to use griddata for unstructured table
+        # TBD: Should change default to use pure Laframboise table when possible
+        # TBD: Should allow extrapolation, but put nan's in there or give a warning or something
+
+        # pts = table['points']
+        # vals = table['values'].reshape(-1)
+        # I[indices_p] = I0*griddata(pts, vals, (1/kappa, alpha, R, eta[indices_p]), method=method)
+
         pts = table['points']
-        vals = table['values'].reshape(-1)
-        I[indices_p] = I0*griddata(pts, vals, (1/kappa, alpha, R, eta[indices_p]))
+        axes = table['axes']
+        vals = table['values']
+        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]))
 
     else:
         table = get_table(table)
+
+        # TBD: Still need to use griddata for unstructured table
+        # TBD: Should change default to use pure Laframboise table when possible
+
+        # pts = table['points']
+        # vals = table['values'].reshape(-1)
+        # I[indices_p] = I0*griddata(pts, vals, (R, eta[indices_p]), method=method)
+
         pts = table['points']
-        vals = table['values'].reshape(-1)
-        I[indices_p] = I0*griddata(pts, vals, (R, eta[indices_p]))
+        axes = table['axes']
+        vals = table['values']
+        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]))
+
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
 
