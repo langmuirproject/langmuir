@@ -156,14 +156,13 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         raise ValueError('Geometry not supported: {}'.format(geometry))
 
     R = geometry.r/species.debye
-    method = 'linear'
+    # method = 'linear'
 
     if "darian-marholm" in table:
         table = get_table(table)
 
         # TBD: Still need to use griddata for unstructured table
         # TBD: Should change default to use pure Laframboise table when possible
-        # TBD: Should allow extrapolation, but put nan's in there or give a warning or something
 
         # pts = table['points']
         # vals = table['values'].reshape(-1)
@@ -172,7 +171,7 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         pts = table['points']
         axes = table['axes']
         vals = table['values']
-        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]))
+        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]), bounds_error=False, fill_value=np.nan)
 
     else:
         table = get_table(table)
@@ -187,7 +186,8 @@ def finite_radius_current(geometry, species, V=None, eta=None, normalization=Non
         pts = table['points']
         axes = table['axes']
         vals = table['values']
-        I[indices_p] = I0*interpn(axes, vals, (1/kappa, alpha, R, eta[indices_p]))
+        print(axes)
+        I[indices_p] = I0*interpn(axes, vals, (R, eta[indices_p]), bounds_error=False, fill_value=np.nan)
 
         if(kappa != float('inf') or alpha != 0):
             logger.warning("Using pure Laframboise tables discards spectral indices kappa and alpha")
