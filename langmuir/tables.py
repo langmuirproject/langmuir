@@ -1,8 +1,28 @@
 import numpy as np
-from scipy.interpolate import griddata
+from numpy import nan
+from scipy.interpolate import LinearNDInterpolator
 from langmuir.species import *
 from langmuir.geometry import *
 from langmuir.analytical import *
+from pprint import pprint
+
+TABLE_NAMES = [
+    # "laframboise raw sphere", # only used inside get_table()
+    # "laframboise raw cylinder", # only used inside get_table()
+    "laframboise sphere",
+    "laframboise cylinder",
+    "laframboise regularized sphere",
+    "laframboise regularized cylinder",
+    "darian-marholm uncomplete sphere",
+    "darian-marholm uncomplete cylinder",
+    "darian-marholm sphere",
+    "darian-marholm cylinder",
+    "laframboise-darian-marholm sphere",
+    "laframboise-darian-marholm cylinder",
+    "laframboise-darian-marholm regularized sphere",
+    "laframboise-darian-marholm regularized cylinder",
+]
+
 
 # https://stackoverflow.com/questions/11144513/numpy-cartesian-product-of-x-and-y-array-points-into-single-array-of-2d-points
 def cartesian_product(*arrays):
@@ -47,84 +67,131 @@ def get_coords_and_value(table, *indices):
     coords.append(table['values'][indices])
     return coords
 
+def check_monotonicity(a):
+    """
+    Check whether Laframboise tables have the correct monotonicity. Useful
+    check after fill_nans().
+    """
+    along_radius = np.all(a[1:,:] <= a[:-1,:]) # decrease with radius
+    along_voltage = np.all(a[:,1:] >= a[:,:-1]) # increase with voltage
+    return along_radius and along_voltage
+
+def fill_nans(table):
+    """
+    Take a regular table with nans (i.e., the laframboise raw tables), and
+    replace the nans with values interpolated from surrounding non-nan values.
+    This is an in-place operation. The interpolation is one-dimensional along
+    the radius-axis. (Unstructured two-dimensional interpolation does not
+    work. It violates expected monotonicity, and results in a jagged result.)
+    """
+
+    # Unstructured interpolation from all values in table.
+    #
+    # pts = table['points']
+    # vals = table['values'].reshape(-1)
+
+    # where_nan_linear = np.isnan(vals)
+    # where_nan = np.isnan(table['values'])
+
+    # pts = pts[~where_nan_linear]
+    # vals = vals[~where_nan_linear]
+    # lerper = LinearNDInterpolator(pts, vals, rescale=True)
+
+    # table['values'][where_nan] = lerper(table['points'][where_nan_linear])
+
+    # Interpolate one-dimensionally along columns of constant voltage.
+
+    R = table['axes'][0]
+    for j in range(table['values'].shape[1]):
+        value_column = table['values'][:,j]
+        where_nan = np.isnan(value_column)
+        table['values'][where_nan, j] = np.interp(R[where_nan], R[~where_nan], value_column[~where_nan])
+
+    assert check_monotonicity(table['values']), "fill_nans() resulted in incorrect monotonicity for Laframboise table"
+
 def get_table(name, provide_points=True):
     """
     Returns tabulated normalized attracted-species currents for finite radii
     spherical or cylindrical probes. If you do not need the raw tables,
     consider using the higher level function finite_radius_current() instead.
+    This function is mostly for internal use in Langmuir.
 
     The following tables exists:
 
-        - laframboise sphere
-        - laframboise cylinder
-        - darian-marholm uncomplete sphere
-        - darian-marholm uncomplete cylinder
-        - darian-marholm sphere
-        - darian-marholm cylinder
-        - laframboise-darian-marholm sphere
-        - laframboise-darian-marholm cylinder
+        - laframboise raw sphere                            regular with nan
+        - laframboise raw cylinder                          regular with nan
+        - laframboise sphere                                non-regular
+        - laframboise cylinder                              non-regular
+        - laframboise regularized sphere                    regular
+        - laframboise regularized cylinder                  regular
+        - darian-marholm uncomplete sphere                  regular
+        - darian-marholm uncomplete cylinder                regular
+        - darian-marholm sphere                             regular
+        - darian-marholm cylinder                           regular
+        - laframboise-darian-marholm sphere                 non-regular
+        - laframboise-darian-marholm cylinder               non-regular
+        - laframboise-darian-marholm regularized sphere     regular
+        - laframboise-darian-marholm regularized cylinder   regular
 
-    The Laframboise tables are tables 5c and 6c in Laframboise's thesis.
-    These only cover Maxwellian velocity distributions. The Darian-Marholm
-    tables cover Kappa-Cairns (and subtype) distributions, although it is
-    not as accurate and with as wide input domain for Maxwellian as Laframboise.
-    The uncomplete version of Darian-Marholm tables are the ones presented in
-    the Darian-Marholm paper, whereas the completed version is the same but
-    with analytical values inserted for zero radius (OML theory) which are
-    not covered by the uncomplete version, and analytical thermal currents for
-    zero potential since these are not as accurate as the other currents in
-    the uncomplete Darian-Marholm paper. The Laframboise-Darian-Marholm tables
-    are the same as the complete Darian-Marholm tables except that the
-    Maxwellian values are replaced by those of Laframboise, which are more
-    accurate. These composed tables therefore offer the greatest accuracy and
-    range for any case. Since the Laframboise case has a larger grid, the
-    grid is no longer regular for the Laframboise-Darian-Marholm tables.
+    The last word in the table name indicate whether it is a table for spherical or
+    cylindrical geometry. The 'laframboise raw' tables are tables 5c and 6c in
+    Laframboise's thesis, but with nan values where there are gaps in the
+    tables. These can accessed indirectly either through the 'laframboise'
+    tables or 'laframboise regularized'. For 'laframboise regularized' the nans
+    will be replaced by values using ``fill_nans()``, whereas for 'laframboise'
+    the nans will be removed, resulting in a set of tabulated values that are
+    not on a regular grid. See also the docstring for
+    ``finite_radius_current()`` for more description on the tables.
 
     The returned dictionary ``table`` has the following keys::
 
         - ``table['axes']`` is a tuple of lists, each list containing the
           grid values along that axis. The axes are, in this order, 1/kappa,
           alpha, R, eta, where kappa and alpha are the spectral indices of
-          the Kappa-Cairns distribution, R is the probe length in terms of
-          Debye lengths, and eta is the normalized voltage qV/kT. For
-          the Laframboise tables the first to axes do not exist.
+          the Kappa-Cairns distribution, R is the probe radius in terms of
+          Debye lengths, and eta is the normalized voltage -qV/kT. For
+          the Laframboise tables the first two axes are omitted. For
+          non-regular grids, the entire 'axes' item is omitted from the
+          dictionary.
+
+        - ``table['points']`` is a flat array of 4-tuples (2-tuples for
+          Laframboise tables), of (1/kappa, alpha, R, eta) corresponding to
+          the tabulated values. This is only provided when the grid is
+          non-regular or when ``provide_points==True``.
 
         - ``table['values']`` is a 4D array (2D for Laframboise) of values.
           ``table['values'][i][j][k][l] is the value corresponding to
           table['axes'][0][i], table['axes'][1][j], and so forth. For
-          non-regular grids (the Laframboise-Darian-Marholm tables) it is
-          flattened to 1D.
+          non-regular grids it is a flat 1D array corresponding to
+          ``table['points']``. ``table['values'].reshape(-1)`` is always
+          flattened to correspond to ``table['points']`` regardless of whether
+          the grid is regular or not.
 
-        - ``table['points']`` is a flatted array of 4-tuples (2-tuples for
-          Laframboise tables), of 1/kappa, alpha, R, eta corresponding to
-          the values in a flattened array. For non-regular grids,
-          ``table['values']`` are already this flattened array, but in any
-          case, ``table['values'].reshape(-1)`` is always correct. This
-          is only provided when the grid is non-regular or when
-          ``provide_points==True``.
+        - ``table['regular']`` is true if the data is on a regular grid.
     """
 
     name = name.lower()
     tol = 1e-6 # For float comparisons
 
-    if name == 'laframboise sphere':
+    if name == 'laframboise raw sphere':
 
-        # Table 5c in Laframboise's thesis
+        # Table 5c in Laframboise's thesis.
+        # Gaps in the table are represented as nans.
 
         Rs =  [0, 0.2, 0.3, 0.5, 1, 2, 3, 5, 7.5, 10, 15, 20, 50, 100]
 
         etas =[0.0  , 0.1  , 0.3  , 0.6  , 1.0  , 1.5  , 2.0  , 3.0  , 5.0  , 7.5  , 10.0  , 15.0  , 20.0  , 25.0]
         Is = [[1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 26.000],   # R=0
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 25.763],   # R=0.2
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.500, 3.000, 4.000, 6.000, 8.500, 11.000, 16.000, 21.000, 25.462],   # R=0.3
-              [1.000, 1.100, 1.300, 1.600, 2.000, 2.493, 2.987, 3.970, 5.917, 8.324, 10.704, 15.403, 20.031, 24.607],   # R=0.5
+              [1.000,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,    nan,    nan,    nan, 25.763],   # R=0.2
+              [1.000,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,    nan,    nan,    nan, 25.462],   # R=0.3
+              [1.000,   nan,   nan,   nan,   nan, 2.493, 2.987, 3.970, 5.917, 8.324, 10.704, 15.403, 20.031, 24.607],   # R=0.5
               [1.000, 1.0999,1.299, 1.595, 1.987, 2.469, 2.945, 3.878, 5.687, 7.871,  9.990, 14.085, 18.041, 21.895],   # R=1
-              [1.000, 1.0999,1.299, 1.584, 1.955, 2.399, 2.824, 3.632, 5.126, 6.847,  8.460, 11.482, 14.314, 17.018],   # R=2
-              [1.000, 1.0999,1.293, 1.572, 1.922, 2.329, 2.709, 3.406, 4.640, 6.007,  7.258,  9.542, 11.636, 13.603],   # R=3
+              [1.000,   nan,   nan, 1.584, 1.955, 2.399, 2.824, 3.632, 5.126, 6.847,  8.460, 11.482, 14.314, 17.018],   # R=2
+              [1.000,   nan, 1.293, 1.572, 1.922, 2.329, 2.709, 3.406, 4.640, 6.007,  7.258,  9.542, 11.636, 13.603],   # R=3
               [1.000, 1.099, 1.288, 1.552, 1.869, 2.219, 2.529, 3.086, 3.957, 4.887,  5.710,  7.167,  8.473,  9.676],   # R=5
-              [1.000, 1.099, 1.288, 1.552, 1.869, 2.219, 2.529, 3.086, 3.957, 4.094,  4.658,  5.645,  6.518,  7.318],   # R=7.5
+              [1.000,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan, 4.094,  4.658,  5.645,  6.518,  7.318],   # R=7.5
               [1.000, 1.098, 1.280, 1.518, 1.783, 2.050, 2.226, 2.609, 3.119, 3.620,  4.050,  4.796,  5.453,  6.053],   # R=10
-              [1.000, 1.098, 1.280, 1.518, 1.783, 2.050, 2.226, 2.609, 3.119, 3.620,  4.050,  4.796,  4.318,  4.719],   # R=15
+              [1.000,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,   nan,    nan,    nan,  4.318,  4.719],   # R=15
               [1.000, 1.097, 1.269, 1.481, 1.694, 1.887, 2.030, 2.235, 2.516, 2.779,  3.002,  3.383,  3.716,  4.018],   # R=20
               [1.000, 1.095, 1.255, 1.433, 1.592, 1.719, 1.803, 1.910, 2.037, 2.148,  2.241,  2.397,  2.532,  2.658],   # R=50
               [1.000, 1.094, 1.245, 1.402, 1.534, 1.632, 1.694, 1.762, 1.833, 1.891,  1.938,  2.022,  2.097,  2.166]]   # R=100
@@ -133,35 +200,76 @@ def get_table(name, provide_points=True):
         etas = np.array(etas)
         Is = np.array(Is)
 
-        table = {'axes': (Rs, etas), 'values': Is}
+        table = {'axes': (Rs, etas), 'values': Is, 'regular': True}
 
-    elif name == 'laframboise cylinder':
+    elif name == 'laframboise raw cylinder':
 
         # Table 6c in Laframboise's thesis
+        # Gaps in the table are represented as nans.
 
         Rs =  [0, 1, 1.5, 2, 2.5, 3, 4, 5, 10, 20, 30, 40, 50, 100]
 
         etas =  [0.0  , 0.1   , 0.3   , 0.6   , 1.0   , 1.5   , 2.0   , 3.0   , 5.0   , 7.5   , 10.0  , 15.0  , 20.0  , 25.0]
         Is = [[1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.7388, 4.5114, 5.1695, 5.7526],   # R=0
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.7388, 4.5114, 5.1695, 5.7525],   # R=1
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.2417, 2.7555, 3.2846, 3.735 , 4.493 , 5.141 , 5.711 ],   # R=1.5
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.247 , 2.750 , 3.266 , 3.703 , 4.439 , 5.060 , 5.607 ],   # R=2
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.7551, 1.9320, 2.237 , 2.731 , 3.227 , 3.645 , 4.342 , 4.936 , 5.462 ],   # R=2.5
-              [1.000, 1.0804, 1.2101, 1.3721, 1.5560, 1.754 , 1.928 , 2.226 , 2.701 , 3.174 , 3.567 , 4.235 , 4.789 , 5.291 ],   # R=3
-              [1.000, 1.0804, 1.2101, 1.3721, 1.554 , 1.747 , 1.913 , 2.192 , 2.626 , 3.050 , 3.402 , 3.990 , 4.489 , 4.926 ],   # R=4
-              [1.000, 1.0804, 1.2100, 1.371 , 1.549 , 1.735 , 1.893 , 2.151 , 2.544 , 2.920 , 3.231 , 3.749 , 4.183 , 4.565 ],   # R=5
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan, 5.1695, 5.7525],   # R=1
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan, 3.735 , 4.493 , 5.141 , 5.711 ],   # R=1.5
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan, 2.2417, 2.750 , 3.266 , 3.703 , 4.439 , 5.060 , 5.607 ],   # R=2
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan, 2.237 , 2.731 , 3.227 , 3.645 , 4.342 , 4.936 , 5.462 ],   # R=2.5
+              [1.000,    nan,    nan,    nan,    nan, 1.754 , 1.928 , 2.226 , 2.701 , 3.174 , 3.567 , 4.235 , 4.789 , 5.291 ],   # R=3
+              [1.000,    nan,    nan,    nan, 1.554 , 1.747 , 1.913 , 2.192 , 2.626 , 3.050 , 3.402 , 3.990 , 4.489 , 4.926 ],   # R=4
+              [1.000,    nan, 1.2100, 1.371 , 1.549 , 1.735 , 1.893 , 2.151 , 2.544 , 2.920 , 3.231 , 3.749 , 4.183 , 4.565 ],   # R=5
               [1.000, 1.0803, 1.208 , 1.362 , 1.523 , 1.677 , 1.798 , 1.98  , 2.22  , 2.442 , 2.622 , 2.919 , 3.166 , 3.384 ],   # R=10
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.319 , 2.455 , 2.576 ],   # R=20
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.082 , 2.177 , 2.262 ],   # R=30
-              [1.000, 1.0803, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.082 , 2.025 , 2.092 ],   # R=40
-              [1.000, 1.0803, 1.198 , 1.327 , 1.439 , 1.523 , 1.576 , 1.638 , 1.703 , 1.756 , 1.798 , 1.868 , 1.929 , 1.983 ],   # R=50
-              [1.000, 1.0803, 1.194 , 1.314 , 1.409 , 1.478 , 1.518 , 1.561 , 1.599 , 1.628 , 1.650 , 1.686 , 1.719 , 1.747 ]]   # R=100
+              [1.000,    nan, 1.205 , 1.348 , 1.486 , 1.605 , 1.689 , 1.801 , 1.940 , 2.060 , 2.157 , 2.319 , 2.455 , 2.576 ],   # R=20
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan, 2.082 , 2.177 , 2.262 ],   # R=30
+              [1.000,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan,    nan, 2.025 , 2.092 ],   # R=40
+              [1.000,    nan, 1.198 , 1.327 , 1.439 , 1.523 , 1.576 , 1.638 , 1.703 , 1.756 , 1.798 , 1.868 , 1.929 , 1.983 ],   # R=50
+              [1.000,    nan, 1.194 , 1.314 , 1.409 , 1.478 , 1.518 , 1.561 , 1.599 , 1.628 , 1.650 , 1.686 , 1.719 , 1.747 ]]   # R=100
 
         Rs = np.array(Rs)
         etas = np.array(etas)
         Is = np.array(Is)
 
-        table = {'axes': (Rs, etas), 'values': Is}
+        table = {'axes': (Rs, etas), 'values': Is, 'regular': True}
+
+    elif name == 'laframboise regularized sphere':
+
+        table = get_table('laframboise raw sphere')
+        fill_nans(table)
+
+    elif name == 'laframboise regularized cylinder':
+
+        table = get_table('laframboise raw cylinder')
+        fill_nans(table)
+
+    elif name == 'laframboise sphere':
+
+        table = get_table('laframboise raw sphere')
+
+        # Grid will no longer be regular.
+        table['values'] = table['values'].reshape(-1)
+        del table['axes']
+
+        # Remove nan values
+        keep = ~np.isnan(table['values'])
+        table['points'] = table['points'][keep]
+        table['values'] = table['values'][keep]
+
+        table['regular'] = False
+
+    elif name == 'laframboise cylinder':
+
+        table = get_table('laframboise raw cylinder')
+
+        # Grid will no longer be regular.
+        table['values'] = table['values'].reshape(-1)
+        del table['axes']
+
+        # Remove nan values
+        keep = ~np.isnan(table['values'])
+        table['points'] = table['points'][keep]
+        table['values'] = table['values'][keep]
+
+        table['regular'] = False
 
     elif name == 'darian-marholm uncomplete sphere':
 
@@ -268,7 +376,7 @@ def get_table(name, provide_points=True):
         Is = np.array(Is)
         Is = np.transpose(Is, (0,1,3,2))
 
-        table = {'axes': (kappa_recips, alphas, Rs, etas), 'values': Is}
+        table = {'axes': (kappa_recips, alphas, Rs, etas), 'values': Is, 'regular': True}
 
     elif name == 'darian-marholm uncomplete cylinder':
 
@@ -375,7 +483,7 @@ def get_table(name, provide_points=True):
         Is = np.array(Is)
         Is = np.transpose(Is, (0,1,3,2))
 
-        table = {'axes': (kappa_recips, alphas, Rs, etas), 'values': Is}
+        table = {'axes': (kappa_recips, alphas, Rs, etas), 'values': Is, 'regular': True}
 
     elif name == 'darian-marholm cylinder':
 
@@ -400,6 +508,7 @@ def get_table(name, provide_points=True):
 
         table['values'] = vals
         table['axes'] = (kappa_recips, alphas, Rs, etas)
+        table['regular'] = True
 
     elif name == 'darian-marholm sphere':
 
@@ -424,6 +533,7 @@ def get_table(name, provide_points=True):
 
         table['values'] = vals
         table['axes'] = (kappa_recips, alphas, Rs, etas)
+        table['regular'] = True
 
     elif name == 'laframboise-darian-marholm sphere':
 
@@ -447,6 +557,22 @@ def get_table(name, provide_points=True):
         values = t['values'].reshape(-1)
         table['points'] = np.concatenate((table['points'], points))
         table['values'] = np.concatenate((table['values'], values))
+        table['regular'] = False
+
+    elif name == 'laframboise-darian-marholm regularized sphere':
+
+        # Get darian-marholm table
+        table = get_table('darian-marholm sphere')
+
+        # Substitute values in laframboise for values in table.
+        # Discard those values in laframboise which do not exist in
+        # darian-marholm to make the grid regular.
+
+        t = get_table('laframboise regularized sphere')
+        ind_radius = np.searchsorted(t['axes'][0], table['axes'][2])
+        ind_eta = np.searchsorted(t['axes'][1], table['axes'][3])
+        table['values'][0,0,:,:] = t['values'][np.ix_(ind_radius, ind_eta)]
+        table['regular'] = True
 
     elif name == 'laframboise-darian-marholm cylinder':
 
@@ -470,6 +596,22 @@ def get_table(name, provide_points=True):
         values = t['values'].reshape(-1)
         table['points'] = np.concatenate((table['points'], points))
         table['values'] = np.concatenate((table['values'], values))
+        table['regular'] = False
+
+    elif name == 'laframboise-darian-marholm regularized cylinder':
+
+        # Get darian-marholm table
+        table = get_table('darian-marholm cylinder')
+
+        # Substitute values in laframboise for values in table.
+        # Discard those values in laframboise which do not exist in
+        # darian-marholm to make the grid regular.
+
+        t = get_table('laframboise regularized cylinder')
+        ind_radius = np.searchsorted(t['axes'][0], table['axes'][2])
+        ind_eta = np.searchsorted(t['axes'][1], table['axes'][3])
+        table['values'][0,0,:,:] = t['values'][np.ix_(ind_radius, ind_eta)]
+        table['regular'] = True
 
     else:
 

@@ -36,9 +36,19 @@ def test_laframboise_sphere(electron):
                               normalization='thmax', table='laframboise')
     assert(I == approx(1.595))
 
+def test_laframboise_regularized_sphere(electron):
+    I = finite_radius_current(Sphere(electron.debye), electron, eta=0.6,
+                              normalization='thmax', table='laframboise regularized')
+    assert(I == approx(1.595))
+
 def test_laframboise_cylinder(electron):
     I = finite_radius_current(Cylinder(3*electron.debye, 1), electron, eta=2.0,
                               normalization='thmax', table='laframboise')
+    assert(I == approx(1.928))
+
+def test_laframboise_regularized_cylinder(electron):
+    I = finite_radius_current(Cylinder(3*electron.debye, 1), electron, eta=2.0,
+                              normalization='thmax', table='laframboise regularized')
     assert(I == approx(1.928))
 
 def test_darian_marholm_uncomplete_sphere(electron):

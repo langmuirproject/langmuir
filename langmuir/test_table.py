@@ -33,11 +33,11 @@ import pytest
 # one can probably remove this one.
 
 def test_laframboise_sphere():
-    t = get_table('laframboise sphere')
+    t = get_table('laframboise regularized sphere')
     assert(np.allclose(get_coords_and_value(t, 4, 3), [1, 0.6, 1.595]))
 
 def test_laframboise_cylinder():
-    t = get_table('laframboise cylinder')
+    t = get_table('laframboise regularized cylinder')
     assert(np.allclose(get_coords_and_value(t, 5, 6), [3, 2.0, 1.928]))
 
 def test_darian_marholm_uncomplete_sphere():

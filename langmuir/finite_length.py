@@ -422,6 +422,8 @@ def get_max_lambd():
     lambds = file['lambds']
     return max(lambds)
 
+# Creating these lerpers as global objects means that they will only be
+# initialized once, which improves performance.
 lerp_C = lerper('C')
 lerp_A = lerper('A')
 lerp_alpha = lerper('alpha')
